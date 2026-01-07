@@ -1,0 +1,338 @@
+{{define "adminEnrollments"}}
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.Title}} | Управление заявками</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { display: flex; flex-direction: column; min-height: 100vh; background-color: #f3f4f6; }
+        main { flex-grow: 1; }
+        /* Кастомный скроллбар */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #c7c7c7; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
+
+        /* Анимация появления строк */
+        .fade-in { animation: fadeIn 0.3s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+    <script>
+        function toggleUserMenu() {
+            const menu = document.getElementById('user-menu');
+            menu.classList.toggle('hidden');
+        }
+    </script>
+</head>
+<body>
+
+{{template "adminBarPanel" .}}
+
+<main class="max-w-7xl mx-auto pb-12 px-4 sm:px-6 lg:px-7 pt-[90px]" style="margin-top: 45px">
+
+<!--    <div class="flex flex-col md:flex-row md:items-center justify-between mb-8">-->
+<!--        <div>-->
+<!--            <h1 class="text-3xl font-bold text-gray-900">Заявки на обучение</h1>-->
+<!--            <p class="mt-2 text-gray-600">Управляйте доступом студентов к курсам.</p>-->
+<!--        </div>-->
+<!--        <div class="mt-4 md:mt-0">-->
+<!--        </div>-->
+<!--    </div>-->
+
+    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 mb-8 transition-all hover:shadow-md">
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+
+            <div class="md:col-span-3">
+                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Поиск студента</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                        <i class="fas fa-search"></i>
+                    </span>
+                    <input type="text" id="filter-search" placeholder="Имя или Email..."
+                           class="w-full pl-10 border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all">
+                </div>
+            </div>
+
+            <div class="md:col-span-3">
+                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Курс</label>
+                <div class="relative">
+                    <select id="filter-course" class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white appearance-none">
+                        <option value="0">Все курсы</option>
+                        {{range .Courses}}
+                        <option value="{{.ID}}">{{.Title}}</option>
+                        {{end}}
+                    </select>
+                    <span class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-gray-500">
+                        <i class="fas fa-chevron-down text-xs"></i>
+                    </span>
+                </div>
+            </div>
+
+            <div class="md:col-span-2">
+                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Статус</label>
+                <div class="relative">
+                    <select id="filter-status" class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white appearance-none">
+                        <option value="all">Все</option>
+                        <option value="pending" selected>Ожидают</option>
+                        <option value="approved">Одобрены</option>
+                        <option value="rejected">Отклонены</option>
+                    </select>
+                    <span class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-gray-500">
+                        <i class="fas fa-chevron-down text-xs"></i>
+                    </span>
+                </div>
+            </div>
+
+            <div class="md:col-span-3">
+                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Период (от)</label>
+                <input type="date" id="filter-date-from" class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-600 focus:ring-2 focus:ring-indigo-500 outline-none">
+            </div>
+
+            <div class="md:col-span-1">
+                <button onclick="applyFilters()" class="w-full bg-indigo-600 text-white h-[42px] rounded-lg text-sm font-bold hover:bg-indigo-700 transition shadow-sm active:transform active:scale-95 flex items-center justify-center">
+                    <i class="fas fa-filter mr-2 md:mr-0 lg:mr-0"></i> <span class="md:hidden lg:hidden">Найти</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden min-h-[400px] flex flex-col">
+        <div class="overflow-x-auto flex-grow">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Студент</th>
+                    <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Курс</th>
+                    <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Дата</th>
+                    <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Статус</th>
+                    <th class="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Действия</th>
+                </tr>
+                </thead>
+                <tbody id="enrollments-table" class="bg-white divide-y divide-gray-200">
+                </tbody>
+            </table>
+        </div>
+
+        <div id="table-loader" class="flex flex-col items-center justify-center py-20 hidden">
+            <i class="fas fa-circle-notch fa-spin text-indigo-600 text-4xl mb-4"></i>
+            <p class="text-gray-500 text-sm font-medium">Загрузка данных...</p>
+        </div>
+
+        <div id="empty-state" class="flex flex-col items-center justify-center py-20 hidden">
+            <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4 text-gray-400">
+                <i class="fas fa-folder-open text-3xl"></i>
+            </div>
+            <h3 class="text-lg font-medium text-gray-900">Заявок не найдено</h3>
+            <p class="text-gray-500 text-sm mt-1">Попробуйте изменить параметры фильтрации.</p>
+        </div>
+
+        <div class="bg-gray-50 px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+            <button onclick="changePage(-1)" class="flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition shadow-sm disabled:opacity-50 disabled:cursor-not-allowed" id="btn-prev">
+                <i class="fas fa-chevron-left mr-2 text-xs"></i> Назад
+            </button>
+            <span id="page-info" class="text-sm font-medium text-gray-600">
+                Страница 1
+            </span>
+            <button onclick="changePage(1)" class="flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition shadow-sm disabled:opacity-50 disabled:cursor-not-allowed" id="btn-next">
+                Вперед <i class="fas fa-chevron-right ml-2 text-xs"></i>
+            </button>
+        </div>
+    </div>
+
+</main>
+
+<script>
+    let currentPage = 1;
+    const limit = 10;
+    let totalPages = 1;
+
+    // Инициализация при загрузке
+    document.addEventListener('DOMContentLoaded', () => {
+        fetchEnrollments();
+    });
+
+    // Применить фильтры (сброс на 1 стр)
+    function applyFilters() {
+        currentPage = 1;
+        fetchEnrollments();
+    }
+
+    // Листание страниц
+    function changePage(delta) {
+        const newPage = currentPage + delta;
+        if (newPage < 1 || newPage > totalPages) return;
+
+        currentPage = newPage;
+        fetchEnrollments();
+    }
+
+    // Запрос к API
+    async function fetchEnrollments() {
+        // Сбор данных фильтров
+        const search = document.getElementById('filter-search').value;
+        const courseId = document.getElementById('filter-course').value;
+        const status = document.getElementById('filter-status').value;
+        const dateFrom = document.getElementById('filter-date-from').value;
+
+        // UI: Показываем лоадер
+        const tbody = document.getElementById('enrollments-table');
+        const loader = document.getElementById('table-loader');
+        const empty = document.getElementById('empty-state');
+
+        tbody.innerHTML = ''; // Очистка таблицы
+        loader.classList.remove('hidden');
+        empty.classList.add('hidden');
+
+        // URL параметры
+        const params = new URLSearchParams({
+            page: currentPage,
+            limit: limit,
+            search: search,
+            course_id: courseId,
+            status: status,
+            date_from: dateFrom
+        });
+
+        try {
+            const res = await fetch(`/api/admin/enrollments?${params.toString()}`);
+            if(!res.ok) throw new Error("API Error");
+
+            const result = await res.json();
+
+            totalPages = result.pages || 1;
+
+            // Рендер таблицы
+            renderTable(result.data);
+
+            // Обновление кнопок пагинации
+            updatePaginationUI(result.page, totalPages);
+
+        } catch (error) {
+            console.error(error);
+            tbody.innerHTML = `<tr><td colspan="5" class="text-center py-8 text-red-500 font-medium">Ошибка загрузки данных. Проверьте консоль.</td></tr>`;
+        } finally {
+            loader.classList.add('hidden');
+        }
+    }
+
+    // Отрисовка строк
+    function renderTable(data) {
+        const tbody = document.getElementById('enrollments-table');
+        const empty = document.getElementById('empty-state');
+
+        if (!data || data.length === 0) {
+            empty.classList.remove('hidden');
+            return;
+        }
+
+        data.forEach(item => {
+            // Стили статусов
+            let badgeClass = "bg-gray-100 text-gray-800";
+            let badgeText = item.status;
+
+            if (item.status === 'pending') {
+                badgeClass = "bg-amber-50 text-amber-700 border border-amber-200 ring-1 ring-amber-200/50";
+                badgeText = '<span class="flex items-center gap-1.5"><span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span></span> На рассмотрении</span>';
+            } else if (item.status === 'approved') {
+                badgeClass = "bg-emerald-50 text-emerald-700 border border-emerald-200";
+                badgeText = '<span class="flex items-center gap-1.5"><i class="fas fa-check-circle text-xs"></i> Одобрено</span>';
+            } else if (item.status === 'rejected') {
+                badgeClass = "bg-rose-50 text-rose-700 border border-rose-200";
+                badgeText = '<span class="flex items-center gap-1.5"><i class="fas fa-times-circle text-xs"></i> Отклонено</span>';
+            }
+
+            // Форматирование даты
+            const dateStr = new Date(item.CreatedAt).toLocaleDateString('ru-RU', {
+                day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute:'2-digit'
+            });
+
+            // Аватарка (заглушка UI Avatars если нет фото)
+            const userNameEncoded = encodeURIComponent(item.user.Name);
+            const avatar = item.user.Picture || `https://ui-avatars.com/api/?name=${userNameEncoded}&background=6366f1&color=fff&size=128`;
+
+            const row = `
+                <tr class="hover:bg-gray-50 transition fade-in group">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 h-10 w-10 relative">
+                                <img class="h-10 w-10 rounded-full object-cover border border-gray-200 shadow-sm" src="${avatar}" alt="">
+                                ${item.status === 'pending' ? '<span class="absolute top-0 right-0 block h-2.5 w-2.5 rounded-full ring-2 ring-white bg-amber-400"></span>' : ''}
+                            </div>
+                            <div class="ml-4">
+                                <div class="text-sm font-bold text-gray-900 group-hover:text-indigo-600 transition-colors">${item.user.Name}</div>
+                                <div class="text-xs text-gray-500">${item.user.Email}</div>
+                            </div>
+                        </div>
+                    </td>
+
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-indigo-50 text-indigo-800">
+                            ${item.course.title || 'Курс удален'}
+                        </span>
+                    </td>
+
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        ${dateStr}
+                    </td>
+
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${badgeClass}">
+                            ${badgeText}
+                        </span>
+                    </td>
+
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        ${item.status === 'pending' ? `
+                            <div class="flex justify-end space-x-2">
+                                <button onclick="updateStatus(${item.ID}, 'approved')" class="group/btn relative flex items-center justify-center w-8 h-8 bg-white border border-green-200 rounded-full text-green-600 hover:bg-green-500 hover:text-white hover:border-green-500 transition-all shadow-sm" title="Одобрить">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                                <button onclick="updateStatus(${item.ID}, 'rejected')" class="group/btn relative flex items-center justify-center w-8 h-8 bg-white border border-red-200 rounded-full text-red-600 hover:bg-red-500 hover:text-white hover:border-red-500 transition-all shadow-sm" title="Отклонить">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        ` : `
+                           <span class="text-gray-400 text-xs">—</span>
+                        `}
+                    </td>
+                </tr>
+            `;
+            tbody.innerHTML += row;
+        });
+    }
+
+    // Обновление UI пагинации
+    function updatePaginationUI(curr, total) {
+        document.getElementById('page-info').textContent = `Страница ${curr} из ${total}`;
+        document.getElementById('btn-prev').disabled = curr <= 1;
+        document.getElementById('btn-next').disabled = curr >= total;
+    }
+
+    // Смена статуса (PUT)
+    async function updateStatus(id, newStatus) {
+        if (!confirm(`Вы действительно хотите изменить статус на "${newStatus === 'approved' ? 'Одобрено' : 'Отклонено'}"?`)) return;
+
+        try {
+            const res = await fetch(`/api/admin/enrollments/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: newStatus })
+            });
+
+            if (res.ok) {
+                fetchEnrollments(); // Перезагрузка таблицы
+            } else {
+                alert("Ошибка при обновлении. Попробуйте позже.");
+            }
+        } catch (e) {
+            console.error(e);
+            alert("Ошибка сети.");
+        }
+    }
+</script>
+
+</body>
+</html>
+{{end}}

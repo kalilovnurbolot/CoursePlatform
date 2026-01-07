@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.Title}} | Online Course Platform</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Дополнительный стиль, чтобы footer был внизу */
+        body { display: flex; flex-direction: column; min-height: 100vh; }
+        main { flex-grow: 1; }
+    </style>
+    <script>
+        function toggleUserMenu() {
+            const menu = document.getElementById('user-menu');
+            menu.classList.toggle('hidden');
+        }
+    </script>
+</head>
+<body>
+
+{{template "header" .}}
+
+<main class="py-12 px-4 sm:px-6 lg:px-8">
+    {{template "content" .}}
+</main>
+
+{{template "footer" .}}
+
+</body>
+</html>

@@ -1,0 +1,79 @@
+{{define "header"}}
+<header class="bg-white shadow-md sticky top-0 z-10">
+    <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center h-16">
+            <a href="/" class="flex-shrink-0 flex items-center">
+                <span class="text-2xl font-bold text-indigo-600">
+                    <i class="fas fa-layer-group text-indigo-600 mr-2"></i> CoursePlatform
+                </span>
+            </a>
+
+            <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+                <a href="/" class="text-gray-500 hover:text-indigo-600 inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium transition duration-150">
+                    Главная
+                </a>
+
+                <a href="#courses" class="text-gray-500 hover:text-indigo-600 inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium transition duration-150">
+                    Курсы
+                </a>
+
+                <a href="#about" class="text-gray-500 hover:text-indigo-600 inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium transition duration-150">
+                    О нас
+                </a>
+
+                {{if eq .RoleID 2}}
+                <a href="/admin/dashboard" class="text-gray-500 hover:text-indigo-600 inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium transition duration-150">
+                    админ
+                </a>
+                {{end}}
+
+                <a href="#contact" class="text-gray-500 hover:text-indigo-600 inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium transition duration-150">
+                    Контакты
+                </a>
+            </div>
+
+            <div class="ml-4 flex items-center md:ml-6">
+                {{if .IsAuthenticated}}
+
+                <div class="relative">
+                    <button type="button"
+                            class="max-w-xs bg-white flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 p-1 transition duration-150"
+                            onclick="toggleUserMenu()">
+                        <span class="sr-only">Открыть меню пользователя</span>
+                        <img class="h-8 w-8 rounded-full"
+                             src="{{.UserPictureURL}}"
+                             alt="{{.UserName}}">
+                    </button>
+
+                    <div id="user-menu"
+                         class="hidden origin-top-right absolute right-0 mt-2 w-48 rounded-lg shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none"
+                         role="menu">
+
+                        <div class="px-4 py-2 text-sm text-gray-700 truncate border-b border-gray-100">
+                            {{.UserName}}
+                        </div>
+
+                        <a href="/personal"
+                           class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition duration-100"
+                           role="menuitem">
+                            Личный Кабинет
+                        </a>
+
+                        <a href="/logout"
+                           class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100 transition duration-100"
+                           role="menuitem">
+                            Выйти
+                        </a>
+                    </div>
+                </div>
+
+                {{else}}
+                <a href="/auth/google/login" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-full shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 transition duration-150">
+                    Войти
+                </a>
+                {{end}}
+            </div>
+        </div>
+    </nav>
+</header>
+{{end}}
