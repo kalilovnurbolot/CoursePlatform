@@ -1,0 +1,11 @@
+# Секреты
+.env
+
+# Локальные данные базы данных (из docker-compose volumes)
+pgdata/
+
+# Временные файлы Air
+tmp/
+
+# Бинарники Go
+main

@@ -1,0 +1,18 @@
+# Используем версию 1.25, которую просит Air
+FROM golang:1.25-alpine
+
+WORKDIR /app
+
+# Устанавливаем git (иногда нужен для скачивания зависимостей)
+RUN apk add --no-cache git
+
+# Установка Air
+RUN go install github.com/air-verse/air@latest
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+
+# Команда для запуска air
+CMD ["air"]
