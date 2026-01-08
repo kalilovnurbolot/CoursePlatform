@@ -43,6 +43,10 @@ func main() {
 
 	// ---------------------------
 	// 3. Запускаем сиды (если нужно)
+
+	if err := database.Seed(db); err != nil {
+		log.Printf("Предупреждение: ошибка сидинга: %v", err)
+	}
 	// ---------------------------
 	// if err := database.Seed(db); err != nil {
 	//    log.Println("Ошибка сидов (возможно, данные уже есть):", err)
@@ -147,6 +151,9 @@ func main() {
 
 	r.HandleFunc("/api/courses/{id}/structure", adminService.GetCourseStructure).Methods("GET")
 	r.HandleFunc("/api/enroll", userMiddleware(adminService.SubmitEnrollment)).Methods("POST")
+
+	// --- Студент
+	r.HandleFunc("/my-courses", userMiddleware(h.HandleStudentDashboard)).Methods("GET")
 	// ---------------------------
 	// 8. Запуск сервера
 	// ---------------------------

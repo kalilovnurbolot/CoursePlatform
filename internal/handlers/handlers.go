@@ -48,6 +48,8 @@ func NewHandler(db *gorm.DB, store *sessions.CookieStore, config *oauth2.Config)
 		"template/admin/enrollment.html",
 		"template/layouts/adminBar.html",
 		"template/layouts/headerPersonal.html",
+
+		"template/student/dashboard.html",
 	)
 
 	if err != nil {
@@ -72,8 +74,10 @@ type PageData struct {
 	UserPictureURL  string
 	CurrentPath     string
 
-	Courses   []models.Course
-	ColorPool []string
+	Courses        []models.Course
+	ColorPool      []string
+	Enrollments    []models.Enrollment
+	StudentCourses []StudentCourseView
 }
 
 func (h *Handler) GetAuthenticatedUserID(r *http.Request) (uint, bool) {

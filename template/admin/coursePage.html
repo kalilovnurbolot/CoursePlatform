@@ -369,7 +369,7 @@
             // Перезагружаем структуру текущего курса (ленивая перезагрузка)
             selectCourse(currentCourseId);
             // Хитрость: чтобы selectCourse сработал повторно для того же ID, сбросим текущий
-            currentCourseId = null; selectCourse(currentCourseId); // Нет, так нельзя.
+
             // Правильно: просто вызвать обновление UI
             refreshStructure();
         } catch (e) { alert(e.message); }

@@ -43,8 +43,6 @@ func (s *Service) HandleEnrollmentsPage(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	courseIDs := enrollments.CourseId
-
 	// Нам нужно передать список курсов для выпадающего списка фильтра
 	var courses []models.Course
 	s.DB.Select("id, title").Where("is_published = ?", true).Where("author_id = ?", userID).Find(&courses)

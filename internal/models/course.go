@@ -13,6 +13,7 @@ type Course struct {
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
+	ImageURL  string         `json:"image_url"` // <--- ДОБАВЬ ЭТУ СТРОКУ
 
 	Title       string `json:"title"`
 	Description string `json:"description"`
