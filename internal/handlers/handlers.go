@@ -30,6 +30,9 @@ func NewHandler(db *gorm.DB, store *sessions.CookieStore, config *oauth2.Config)
 		"mod": func(i, j int) int {
 			return i % j
 		},
+		"add": func(i, j int) int {
+			return i + j
+		},
 	}
 
 	// 2. Инициализируем шаблон, регистрируем функции, а ЗАТЕМ парсим файлы
@@ -50,6 +53,8 @@ func NewHandler(db *gorm.DB, store *sessions.CookieStore, config *oauth2.Config)
 		"template/layouts/headerPersonal.html",
 
 		"template/student/dashboard.html",
+		"template/student/courseContents.html",
+		"template/student/lessonView.html",
 	)
 
 	if err != nil {
@@ -74,10 +79,20 @@ type PageData struct {
 	UserPictureURL  string
 	CurrentPath     string
 
-	Courses        []models.Course
-	ColorPool      []string
-	Enrollments    []models.Enrollment
-	StudentCourses []StudentCourseView
+	Courses         []models.Course
+	ColorPool       []string
+	Enrollments     []models.Enrollment
+	StudentCourses  []StudentCourseView
+	Course          models.Course
+	DoneLessonsMap  map[uint]bool
+	TotalLessons    int
+	ProgressPercent int
+	NextLessonID    uint
+
+	Lesson       models.Lesson
+	PrevLessonID uint
+	IsLessonDone bool
+	AttemptsJSON string
 }
 
 func (h *Handler) GetAuthenticatedUserID(r *http.Request) (uint, bool) {

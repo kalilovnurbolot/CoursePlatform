@@ -1,0 +1,125 @@
+{{define "courseContents"}}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.Course.Title}}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8f9fa; }
+        .font-serif { font-family: 'Playfair Display', serif; }
+        /* Эффект для строк уроков */
+        .lesson-row:hover .lesson-icon { background-color: #4f46e5; color: white; }
+    </style>
+    <script>
+        function toggleUserMenu() {
+            const menu = document.getElementById('user-menu');
+            menu.classList.toggle('hidden');
+        }
+    </script>
+</head>
+<body class="text-slate-800">
+
+{{template "headerPersonal" .}}
+
+<main class="max-w-3xl mx-auto py-8 px-4">
+
+    <div class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-6">
+        <div>
+            <nav class="mb-2">
+                <a href="/my-courses" class="text-xs font-bold text-indigo-600 uppercase tracking-widest hover:opacity-70 transition">
+                    <i class="fas fa-chevron-left mr-1"></i> К списку курсов
+                </a>
+            </nav>
+            <h1 class="text-2xl md:text-3xl font-serif font-bold text-slate-900 leading-tight">{{.Course.Title}}</h1>
+            <p class="text-sm text-slate-500 mt-1">Автор: <span class="font-medium text-slate-700">{{with .Course.Author.Name}}{{.}}{{else}}Инструктор{{end}}</span></p>
+        </div>
+
+        <div class="bg-white border border-slate-200 rounded-2xl px-4 py-3 flex items-center shadow-sm">
+            <div class="mr-4 text-right">
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-tighter leading-none">Прогресс чтения</p>
+                <p class="text-sm font-bold text-slate-700 mt-1">{{len .DoneLessonsMap}} / {{.TotalLessons}} уроков</p>
+            </div>
+            <div class="relative w-12 h-12">
+                <div class="w-full h-full rounded-full border-4 border-slate-100 flex items-center justify-center">
+                    <span class="text-[10px] font-black text-indigo-600">{{.ProgressPercent}}%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white shadow-sm border border-slate-200 rounded-2xl overflow-hidden">
+        <div class="divide-y divide-slate-100">
+            {{range $index, $module := .Course.Modules}}
+            <div class="p-6">
+                <div class="flex items-center mb-5">
+                    <span class="text-[10px] font-bold text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded uppercase tracking-widest mr-3">
+                        Глава {{add $index 1}}
+                    </span>
+                    <h2 class="text-sm font-black uppercase tracking-tight text-slate-800">{{$module.Title}}</h2>
+                </div>
+
+                <div class="space-y-1.5">
+                    {{range .Lessons}}
+                    {{$isDone := index $.DoneLessonsMap .ID}}
+                    <a href="/course/{{$.Course.ID}}/lesson/{{.ID}}"
+                       class="lesson-row flex items-center justify-between p-2.5 -mx-2 rounded-xl transition-all group {{if $isDone}}bg-emerald-50/30{{else}}hover:bg-slate-50{{end}}">
+
+                        <div class="flex items-center min-w-0">
+                            <div class="lesson-icon w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-lg transition-colors mr-3 {{if $isDone}}bg-emerald-100 text-emerald-600{{else}}bg-slate-100 text-slate-400{{end}}">
+                                {{if $isDone}}
+                                <i class="fas fa-check text-[10px]"></i>
+                                {{else}}
+                                <i class="far fa-file-alt text-xs"></i>
+                                {{end}}
+                            </div>
+
+                            <div class="truncate">
+                                <span class="text-sm font-medium {{if $isDone}}text-slate-500{{else}}text-slate-700 group-hover:text-indigo-600{{end}}">
+                                    {{.Title}}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="flex-shrink-0 ml-4">
+                            {{if $isDone}}
+                            <span class="text-[9px] font-black text-emerald-600 uppercase tracking-tighter">Прочитано</span>
+                            {{else}}
+                            <div class="flex items-center text-slate-300 group-hover:text-indigo-500 transition-colors">
+                                <span class="text-[9px] font-bold uppercase tracking-tighter mr-2 opacity-0 group-hover:opacity-100 transition-opacity">Читать</span>
+                                <i class="fas fa-chevron-right text-[10px]"></i>
+                            </div>
+                            {{end}}
+                        </div>
+                    </a>
+                    {{else}}
+                    <p class="text-xs text-slate-400 italic ml-11">Страницы еще не добавлены</p>
+                    {{end}}
+                </div>
+            </div>
+            {{else}}
+            <div class="p-16 text-center">
+                <i class="fas fa-feather-alt text-slate-200 text-4xl mb-4"></i>
+                <p class="text-slate-400 text-sm italic">Книга в процессе написания...</p>
+            </div>
+            {{end}}
+        </div>
+    </div>
+
+    {{if gt .ProgressPercent 0}}
+    {{if lt .ProgressPercent 100}}
+    <div class="mt-8 flex justify-center">
+        <a href="/course/{{.Course.ID}}/lesson/{{.NextLessonID}}" class="bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold text-sm shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition active:scale-95">
+            Продолжить чтение
+        </a>
+    </div>
+    {{end}}
+    {{end}}
+</main>
+
+</body>
+</html>
+{{end}}

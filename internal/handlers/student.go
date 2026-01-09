@@ -1,10 +1,15 @@
 package handlers
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
+	"strconv"
+	"time"
 
+	"github.com/gorilla/mux"
 	"github.com/s/onlineCourse/internal/models"
+	"gorm.io/gorm"
 )
 
 // Структура для отображения курса с процентами
@@ -76,5 +81,208 @@ func (s *Handler) HandleStudentDashboard(w http.ResponseWriter, r *http.Request)
 	}
 	//w.Header().Set("Content-Type", "application/json")
 	//fmt.Fprintf(w, "%+v", data)
-	s.Tmpl.ExecuteTemplate(w, "studentDashboard", data)
+	err = s.Tmpl.ExecuteTemplate(w, "studentDashboard", data)
+	if err != nil {
+		log.Printf("Ошибка рендеринга шаблона: %v", err)
+		http.Error(w, "Ошибка сервера при формировании страницы", http.StatusInternalServerError)
+	}
+}
+
+func (s *Handler) HandleCourseLearn(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	courseID := vars["id"]
+	roleID, userID := s.GetUserRoleID(r)
+
+	if userID == 0 {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
+	// 1. ПРОВЕРКА ДОСТУПА
+	var enrollment models.Enrollment
+	err := s.DB.Where("user_id = ? AND course_id = ? AND status = ?", userID, courseID, "approved").First(&enrollment).Error
+	if err != nil {
+		http.Error(w, "Доступ запрещен или заявка не одобрена", http.StatusForbidden)
+		return
+	}
+
+	// 2. ЗАГРУЗКА ДАННЫХ КУРСА
+	var course models.Course
+	s.DB.Preload("Author").Preload("Modules.Lessons").First(&course, courseID)
+
+	// 3. ЗАГРУЗКА ПРОГРЕССА
+	var progress []models.LessonProgress
+	s.DB.Where("user_id = ? AND course_id = ? AND is_done = ?", userID, courseID, true).Find(&progress)
+
+	// Создаем карту пройденных уроков
+	doneMap := make(map[uint]bool)
+	for _, p := range progress {
+		doneMap[p.LessonID] = true
+	}
+
+	// 4. РАСЧЕТЫ ДЛЯ ШАБЛОНА (Пагинация и Прогресс)
+	totalLessons := 0
+	var nextLessonID uint
+	foundNext := false
+
+	for _, m := range course.Modules {
+		totalLessons += len(m.Lessons) // Считаем общее кол-во уроков
+
+		for _, l := range m.Lessons {
+			// Ищем первый урок, которого нет в карте выполненных
+			if !doneMap[l.ID] && !foundNext {
+				nextLessonID = l.ID
+				foundNext = true
+			}
+		}
+	}
+
+	// Считаем процент
+	percent := 0
+	if totalLessons > 0 {
+		percent = int((float64(len(doneMap)) / float64(totalLessons)) * 100)
+	}
+
+	session, _ := s.Store.Get(r, "session")
+
+	// 5. ПОДГОТОВКА ДАННЫХ
+	data := PageData{
+		Title:           course.Title,
+		Course:          course,
+		IsAuthenticated: true,
+		UserName:        toString(session.Values["name"]),
+		UserPictureURL:  toString(session.Values["picture_url"]),
+		DoneLessonsMap:  doneMap,
+		CurrentPath:     r.URL.Path,
+		RoleID:          roleID,
+
+		// Добавляем новые поля для компактного шаблона
+		TotalLessons:    totalLessons,
+		ProgressPercent: percent,
+		NextLessonID:    nextLessonID,
+	}
+
+	err = s.Tmpl.ExecuteTemplate(w, "courseContents", data)
+	if err != nil {
+		log.Printf("Ошибка рендеринга шаблона: %v", err)
+		http.Error(w, "Ошибка сервера", http.StatusInternalServerError)
+	}
+}
+
+// HandleLessonView — Загрузка страницы урока
+func (s *Handler) HandleLessonView(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	courseID := vars["id"]
+	lessonID := vars["lesson_id"]
+	_, userID := s.GetUserRoleID(r)
+
+	// 1. Загрузка урока и курса для навигации
+	var lesson models.Lesson
+	s.DB.Preload("ContentBlocks", func(db *gorm.DB) *gorm.DB {
+		return db.Order("content_blocks.order ASC")
+	}).First(&lesson, lessonID)
+
+	var course models.Course
+	s.DB.Preload("Modules.Lessons").First(&course, courseID)
+
+	// 2. Логика поиска ID для кнопок "Назад" и "Вперед"
+	var allLessons []uint
+	for _, m := range course.Modules {
+		for _, l := range m.Lessons {
+			allLessons = append(allLessons, l.ID)
+		}
+	}
+
+	var nextID, prevID uint
+	for i, id := range allLessons {
+		if id == lesson.ID {
+			if i > 0 {
+				prevID = allLessons[i-1]
+			}
+			if i < len(allLessons)-1 {
+				nextID = allLessons[i+1]
+			}
+			break
+		}
+	}
+
+	// 3. Загрузка прогресса и прошлых ответов
+	var progress models.LessonProgress
+	isDone := s.DB.Where("user_id = ? AND lesson_id = ? AND is_done = ?", userID, lesson.ID, true).First(&progress).RowsAffected > 0
+
+	var attempts []models.QuizAttempt
+	s.DB.Where("user_id = ? AND lesson_id = ?", userID, lessonID).Find(&attempts)
+	attemptsJSON, _ := json.Marshal(attempts)
+	attemptsStr := string(attemptsJSON)
+	if attemptsStr == "null" || attemptsStr == "" {
+		attemptsStr = "[]"
+	}
+
+	session, _ := s.Store.Get(r, "session")
+	data := PageData{
+		Title:           lesson.Title,
+		Course:          course,
+		Lesson:          lesson,
+		IsAuthenticated: true,
+		NextLessonID:    nextID,
+		PrevLessonID:    prevID,
+		IsLessonDone:    isDone,
+		AttemptsJSON:    attemptsStr,
+		UserName:        toString(session.Values["name"]),
+		UserPictureURL:  toString(session.Values["picture_url"]),
+	}
+	s.Tmpl.ExecuteTemplate(w, "lessonView", data)
+}
+
+// SaveQuizAttemptAPI — Сохранение ответа СРАЗУ (POST /api/course/{id}/lesson/{lesson_id}/quiz)
+func (s *Handler) SaveQuizAttemptAPI(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	lessonID, _ := strconv.ParseUint(vars["lesson_id"], 10, 32)
+	_, userID := s.GetUserRoleID(r)
+
+	// ВАЖНО: Добавьте SelectedIndex в эту структуру!
+	var req struct {
+		BlockID       uint   `json:"block_id"`
+		SelectedIndex int    `json:"selected_index"` // <--- Без этой строки всегда будет 0
+		Question      string `json:"question"`
+		Answer        string `json:"answer"`
+		IsCorrect     bool   `json:"is_correct"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		log.Printf("Ошибка декодирования: %v", err)
+		http.Error(w, "Error", http.StatusBadRequest)
+		return
+	}
+
+	attempt := models.QuizAttempt{
+		UserID:        userID,
+		LessonID:      uint(lessonID),
+		BlockID:       req.BlockID,
+		SelectedIndex: req.SelectedIndex, // Теперь здесь будет реальное число (0, 1, 2...)
+		Question:      req.Question,
+		Answer:        req.Answer,
+		IsCorrect:     req.IsCorrect,
+	}
+
+	if err := s.DB.Create(&attempt).Error; err != nil {
+		log.Printf("Ошибка записи в БД: %v", err)
+		http.Error(w, "DB Error", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+// MarkLessonReadAPI — Отметка о прочтении (POST /api/course/{id}/lesson/{lesson_id}/done)
+func (s *Handler) MarkLessonReadAPI(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	courseID, _ := strconv.ParseUint(vars["id"], 10, 32)
+	lessonID, _ := strconv.ParseUint(vars["lesson_id"], 10, 32)
+	_, userID := s.GetUserRoleID(r)
+
+	s.DB.Where("user_id = ? AND lesson_id = ?", userID, lessonID).
+		Assign(models.LessonProgress{IsDone: true, UpdatedAt: time.Now()}).
+		FirstOrCreate(&models.LessonProgress{UserID: userID, LessonID: uint(lessonID), CourseID: uint(courseID)})
+	w.WriteHeader(http.StatusOK)
 }

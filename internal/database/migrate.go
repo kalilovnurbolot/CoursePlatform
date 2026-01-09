@@ -15,5 +15,6 @@ func AutoMigrate(db *gorm.DB) error {
 		&models.ContentBlock{},
 		&models.Enrollment{},
 		&models.LessonProgress{},
+		&models.QuizAttempt{},
 	)
 }

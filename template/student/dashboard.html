@@ -13,6 +13,12 @@
     .course-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
     .course-card:hover { transform: translateY(-5px); }
   </style>
+  <script>
+    function toggleUserMenu() {
+      const menu = document.getElementById('user-menu');
+      menu.classList.toggle('hidden');
+    }
+  </script>
 </head>
 <body class="bg-[#f8fafc] text-[#1e293b]">
 

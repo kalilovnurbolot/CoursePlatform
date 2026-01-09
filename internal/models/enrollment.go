@@ -18,13 +18,26 @@ type Enrollment struct {
 	Course Course `json:"course" gorm:"foreignKey:CourseID"`
 }
 
-type LessonProgress struct {
-	ID uint `gorm:"primarykey" json:"id"`
-	// Составной индекс: поиск прогресса конкретного юзера по конкретному уроку будет мгновенным
-	UserID   uint `json:"user_id" gorm:"uniqueIndex:idx_user_lesson"`
-	LessonID uint `json:"lesson_id" gorm:"uniqueIndex:idx_user_lesson"`
+// models/progress.go
 
-	CourseID  uint      `json:"course_id" gorm:"index"` // Индекс для быстрого счета прогресса всего курса
+type LessonProgress struct {
+	ID        uint      `gorm:"primarykey" json:"id"`
+	UserID    uint      `gorm:"uniqueIndex:idx_user_lesson" json:"user_id"`
+	LessonID  uint      `gorm:"uniqueIndex:idx_user_lesson" json:"lesson_id"`
+	CourseID  uint      `gorm:"index" json:"course_id"`
 	IsDone    bool      `json:"is_done" gorm:"default:false"`
 	UpdatedAt time.Time `json:"completed_at"`
+}
+
+// Новая модель для записи результатов тестов
+type QuizAttempt struct {
+	ID            uint      `gorm:"primarykey"`
+	UserID        uint      `gorm:"index"`
+	LessonID      uint      `gorm:"index"`
+	BlockID       uint      `json:"block_id" gorm:"index"` // Прямая связь с ID блока
+	Question      string    `json:"question"`
+	Answer        string    `json:"answer"`
+	IsCorrect     bool      `json:"is_correct"`
+	SelectedIndex int       `json:"selected_index"` // Сохраняем номер ответа (0, 1, 2...)
+	CreatedAt     time.Time `json:"created_at"`
 }

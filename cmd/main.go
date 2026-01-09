@@ -153,8 +153,26 @@ func main() {
 	r.HandleFunc("/api/enroll", userMiddleware(adminService.SubmitEnrollment)).Methods("POST")
 
 	// --- Студент
+
 	r.HandleFunc("/my-courses", userMiddleware(h.HandleStudentDashboard)).Methods("GET")
+
+	// 1. Оглавление курса (Первая страница книги)
+	// Пример: /course/11/learn
+	r.HandleFunc("/course/{id:[0-9]+}/learn", userMiddleware(h.HandleCourseLearn)).Methods("GET")
+	// Роут для записи конкретной попытки теста
+	r.HandleFunc("/api/course/{id:[0-9]+}/lesson/{lesson_id:[0-9]+}/quiz", userMiddleware(h.SaveQuizAttemptAPI)).Methods("POST")
+
+	// Роут только для отметки о прочтении
+	r.HandleFunc("/api/course/{id:[0-9]+}/lesson/{lesson_id:[0-9]+}/done", userMiddleware(h.MarkLessonReadAPI)).Methods("POST")
+	// 2. Страница конкретного урока (Страница книги)
+	// Мы передаем и ID курса, и ID урока для безопасности и навигации
+	// Пример: /course/11/lesson/25
+	r.HandleFunc("/course/{id:[0-9]+}/lesson/{lesson_id:[0-9]+}", userMiddleware(h.HandleLessonView)).Methods("GET")
+
+	// 3. API для отметки урока как "прочитанного"
+	//r.HandleFunc("/api/course/{id:[0-9]+}/lesson/{lesson_id:[0-9]+}/done", userMiddleware(h.MarkLessonDoneAPI)).Methods("POST")
 	// ---------------------------
+
 	// 8. Запуск сервера
 	// ---------------------------
 	port := os.Getenv("PORT")
