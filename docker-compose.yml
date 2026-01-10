@@ -5,11 +5,13 @@ services:
     image: postgres:15-alpine
     container_name: course_db
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: "1234"
-      POSTGRES_DB: testdb
+      # Бул жерде .env файлындагы маанилер колдонулат
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     ports:
-      - "5432:5432"
+      # Сырткы портту да өзгөрмө кылса болот
+      - "${DB_PORT}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
 
@@ -19,7 +21,7 @@ services:
       dockerfile: Dockerfile.dev
     container_name: course_app
     ports:
-      - "8080:8080"
+      - "${APP_PORT}:8080"
     volumes:
       - .:/app
     depends_on:
