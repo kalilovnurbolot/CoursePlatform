@@ -89,10 +89,11 @@ type PageData struct {
 	ProgressPercent int
 	NextLessonID    uint
 
-	Lesson       models.Lesson
-	PrevLessonID uint
-	IsLessonDone bool
-	AttemptsJSON string
+	Lesson         models.Lesson
+	PrevLessonID   uint
+	IsLessonDone   bool
+	AttemptsJSON   string
+	CourseLanguage string // <--- Restored
 }
 
 func (h *Handler) GetAuthenticatedUserID(r *http.Request) (uint, bool) {

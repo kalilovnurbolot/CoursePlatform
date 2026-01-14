@@ -18,7 +18,7 @@
         }
         .col-panel { background-color: white; border-radius: 0.5rem; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1); display: flex; flex-direction: column; overflow: hidden; }
         .scrollable-content { overflow-y: auto; flex-grow: 1; padding: 1rem; }
-        .content-block { border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 1rem; background: #fff; position: relative; margin-bottom: 1rem; transition: all 0.2s; }
+        .content-block { border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 1rem; background: #fff; position: relative; margin-bottom: 1.5rem; transition: all 0.2s; }
         .content-block:hover { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border-color: #6366f1; }
         .block-actions { position: absolute; top: 0.5rem; right: 0.5rem; opacity: 0.5; transition: opacity 0.2s; }
         .content-block:hover .block-actions { opacity: 1; }
@@ -28,6 +28,19 @@
         ::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
         .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Стили для кнопки вставки */
+        .insert-trigger {
+            position: absolute;
+            bottom: -14px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            opacity: 0;
+            transition: all 0.2s;
+        }
+        .content-block:hover .insert-trigger { opacity: 1; }
+        .insert-trigger:hover { transform: translateX(-50%) scale(1.1); }
     </style>
     <script>
         function toggleUserMenu() {
@@ -64,21 +77,26 @@
                         <label id="editor-label" class="text-xs text-gray-500 font-bold uppercase tracking-wider">Выберите курс или урок</label>
                         <input type="text" id="lesson-title-input" disabled value="" class="w-full text-xl font-bold text-gray-800 border-none p-0 focus:ring-0 placeholder-gray-300 bg-transparent" placeholder="Название урока...">
                     </div>
-                    <button id="save-content-btn" disabled class="px-4 py-2 bg-gray-300 text-white text-sm font-medium rounded shadow transition flex items-center gap-2 cursor-not-allowed">
-                        <i class="fas fa-save"></i> <span>Сохранить</span>
-                    </button>
+                    <div class="flex gap-2">
+                        <button id="reset-answers-btn" disabled onclick="resetLessonAnswers()" class="px-3 py-2 bg-rose-100 text-rose-700 hover:bg-rose-200 text-sm font-medium rounded shadow transition flex items-center gap-2 cursor-not-allowed" title="Сбросить ответы студентов для этого урока">
+                            <i class="fas fa-eraser"></i>
+                        </button>
+                        <button id="save-content-btn" disabled class="px-4 py-2 bg-gray-300 text-white text-sm font-medium rounded shadow transition flex items-center gap-2 cursor-not-allowed">
+                            <i class="fas fa-save"></i> <span>Сохранить</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            <div id="content-blocks-area" class="scrollable-content bg-gray-50/50 p-6">
+            <div id="content-blocks-area" class="scrollable-content bg-gray-50/50 p-6 pb-20">
                 <div class="text-center text-gray-400 mt-20">
                     <i class="fas fa-arrow-left"></i> Выберите курс слева, чтобы начать редактирование структуры.
                 </div>
             </div>
 
-            <div class="p-4 border-t bg-gray-50 text-center">
-                <button id="add-block-btn" disabled onclick="openTypeModal()" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-400 bg-gray-100 cursor-not-allowed transition">
-                    <i class="fas fa-plus-circle mr-2"></i> Добавить блок контента
+            <div class="p-4 border-t bg-gray-50 text-center sticky bottom-0 z-20">
+                <button id="add-block-btn" disabled onclick="openTypeModal(null)" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-400 bg-gray-100 cursor-not-allowed transition">
+                    <i class="fas fa-plus-circle mr-2"></i> Добавить блок в конец
                 </button>
             </div>
         </div>
@@ -104,7 +122,7 @@
             <button onclick="closeTypeModal()" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times text-xl"></i></button>
         </div>
 
-        <div class="grid grid-cols-2 gap-4">
+        <div class="grid grid-cols-3 gap-4">
             <button onclick="addBlock('text')" class="flex flex-col items-center justify-center p-4 border rounded-xl hover:border-indigo-500 hover:bg-indigo-50 hover:shadow-md transition group">
                 <i class="fas fa-align-left text-3xl text-gray-400 group-hover:text-indigo-600 mb-2"></i>
                 <span class="text-sm font-medium text-gray-700">Текст</span>
@@ -115,15 +133,28 @@
                 <span class="text-sm font-medium text-gray-700">Код</span>
             </button>
 
+            <button onclick="addBlock('video')" class="flex flex-col items-center justify-center p-4 border rounded-xl hover:border-indigo-500 hover:bg-indigo-50 hover:shadow-md transition group">
+                <i class="fab fa-youtube text-3xl text-gray-400 group-hover:text-red-600 mb-2"></i>
+                <span class="text-sm font-medium text-gray-700">YouTube</span>
+            </button>
+
             <button onclick="addBlock('quiz')" class="flex flex-col items-center justify-center p-4 border rounded-xl hover:border-indigo-500 hover:bg-indigo-50 hover:shadow-md transition group">
                 <i class="fas fa-list-check text-3xl text-gray-400 group-hover:text-indigo-600 mb-2"></i>
                 <span class="text-sm font-medium text-gray-700">Тест</span>
             </button>
 
-            <button onclick="addBlock('video')" class="flex flex-col items-center justify-center p-4 border rounded-xl hover:border-indigo-500 hover:bg-indigo-50 hover:shadow-md transition group">
-                <i class="fab fa-youtube text-3xl text-gray-400 group-hover:text-red-600 mb-2"></i>
-                <span class="text-sm font-medium text-gray-700">YouTube</span>
+            <button onclick="addBlock('vocabulary')" class="flex flex-col items-center justify-center p-4 border rounded-xl hover:border-indigo-500 hover:bg-indigo-50 hover:shadow-md transition group">
+                <i class="fas fa-language text-3xl text-gray-400 group-hover:text-green-600 mb-2"></i>
+                <span class="text-sm font-medium text-gray-700">Словарь</span>
             </button>
+
+            <button id="btn-add-audio" onclick="addBlock('audio_dictation')" class="flex flex-col items-center justify-center p-4 border rounded-xl hover:border-indigo-500 hover:bg-indigo-50 hover:shadow-md transition group disabled:opacity-50 disabled:cursor-not-allowed">
+                <i class="fas fa-headphones text-3xl text-gray-400 group-hover:text-purple-600 mb-2"></i>
+                <span class="text-sm font-medium text-gray-700">Аудио-диктант</span>
+            </button>
+        </div>
+        <div id="audio-warning" class="hidden text-xs text-red-500 text-center mt-2">
+            * Для этого блока нужно выбрать язык в настройках курса.
         </div>
     </div>
 </div>
@@ -137,9 +168,28 @@
         <form id="course-form" onsubmit="handleCourseSubmit(event)" class="p-6">
             <input type="hidden" id="course-id">
             <div class="mb-4">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Название курса 1</label>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Название курса</label>
                 <input type="text" id="input-course-title" required class="w-full border-gray-300 rounded-md shadow-sm p-2 border focus:ring-indigo-500">
             </div>
+
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Язык курса (для озвучки)</label>
+                <select id="input-course-lang" class="w-full border-gray-300 rounded-md shadow-sm p-2 border focus:ring-indigo-500">
+                    <option value="">-- Не выбран --</option>
+                    <option value="en-US">Английский (US)</option>
+                    <option value="en-GB">Английский (UK)</option>
+                    <option value="ru-RU">Русский</option>
+                    <option value="de-DE">Немецкий</option>
+                    <option value="fr-FR">Французский</option>
+                    <option value="es-ES">Испанский</option>
+                </select>
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">URL Логотипа (опционально)</label>
+                <input type="text" id="input-course-image" class="w-full border-gray-300 rounded-md shadow-sm p-2 border focus:ring-indigo-500" placeholder="https://...">
+            </div>
+
             <div class="mb-6 flex items-center bg-gray-50 p-3 rounded-md border border-gray-100">
                 <input id="input-course-published" type="checkbox" class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
                 <label for="input-course-published" class="ml-2 block text-sm text-gray-900">Опубликовать курс</label>
@@ -155,6 +205,9 @@
 <script>
     let globalCourses = [];
     let currentCourseId = null;
+    let currentLessonId = null;
+    let insertAfterElement = null;
+    let currentCourseLang = ""; // Храним язык текущего курса
 
     document.addEventListener('DOMContentLoaded', () => {
         fetchCourses();
@@ -166,10 +219,9 @@
             'Content-Type': 'application/json'
         };
 
-        // Пытаемся найти CSRF токен в meta-теге (если вы его добавили в HTML)
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
         if (csrfToken) {
-            headers['X-CSRF-Token'] = csrfToken; // Или 'X-CSRF-Param', зависит от middleware
+            headers['X-CSRF-Token'] = csrfToken;
         }
 
         const options = { method, headers };
@@ -179,12 +231,19 @@
 
         const response = await fetch(url, options);
 
+        if (response.status === 409) {
+            const errData = await response.json();
+            const error = new Error(errData.error || 'Conflict');
+            error.status = 409;
+            error.code = errData.error;
+            throw error;
+        }
+
         if (!response.ok) {
             const errorText = await response.text();
             throw new Error(errorText || `Ошибка HTTP: ${response.status}`);
         }
 
-        // Если ответ пустой (например 204 No Content), возвращаем null
         if (response.status === 204) return null;
 
         return await response.json();
@@ -200,12 +259,8 @@
         const container = document.getElementById('courses-list-container');
 
         try {
-            // Делаем реальный запрос на /api/courses
             const courses = await apiCall('/api/courses', 'GET');
-
-            // Если пришел null или undefined, ставим пустой массив
             globalCourses = courses || [];
-
             renderCoursesList(globalCourses);
 
         } catch (error) {
@@ -231,13 +286,9 @@
         }
 
         courses.forEach(course => {
-            // Обратите внимание: Go отправляет JSON поля, проверьте регистр (Title vs title)
-            // Обычно JSON приходит в lowercase: title, is_published
             const title = course.title || course.Title;
             const isPub = (course.is_published !== undefined) ? course.is_published : course.IsPublished;
             const authorName = course.author?.Name || course.Author?.Name || 'Система';
-
-            // Получаем ID (Go GORM: ID, JSON: id или ID)
             const cId = course.id || course.ID;
 
             const statusColor = isPub ? 'bg-indigo-500' : 'bg-gray-300';
@@ -279,29 +330,34 @@
         if (currentCourseId === id) return;
         currentCourseId = id;
 
-        // UI: Подсветка
+        // Находим курс в глобальном списке, чтобы узнать его язык
+        const course = globalCourses.find(c => c.id === id);
+        if (course) {
+            currentCourseLang = course.language || "";
+        } else {
+            currentCourseLang = "";
+        }
+
         document.querySelectorAll('[id^="course-item-"]').forEach(el => el.classList.remove('bg-indigo-100'));
         document.getElementById(`course-item-${id}`)?.classList.add('bg-indigo-100');
 
-        // UI: Активация кнопки добавления модуля
         const addModBtn = document.getElementById('add-module-btn');
         addModBtn.disabled = false;
         addModBtn.className = "text-indigo-600 hover:text-indigo-800 bg-indigo-50 p-1.5 rounded hover:bg-indigo-100 transition cursor-pointer";
-        addModBtn.onclick = () => createModule(); // Привязываем функцию создания
+        addModBtn.onclick = () => createModule();
 
-        // UI: Сброс редактора
         document.getElementById('lesson-title-input').value = "";
         document.getElementById('lesson-title-input').disabled = true;
         document.getElementById('content-blocks-area').innerHTML = `<div class="text-center text-gray-400 mt-20">Выберите урок справа</div>`;
+        document.getElementById('reset-answers-btn').disabled = true;
+        document.getElementById('reset-answers-btn').classList.add('cursor-not-allowed');
 
-        // DATA: Загрузка структуры
         const structContainer = document.getElementById('structure-container');
         structContainer.innerHTML = '<div class="text-center text-gray-400 mt-5"><i class="fas fa-spinner fa-spin"></i></div>';
 
         try {
-            // Запрашиваем курс целиком, так как getCourseByID делает Preload("Modules.Lessons")
-            const course = await apiCall(`/api/courses/${id}`);
-            renderModules(course.modules || []);
+            const courseData = await apiCall(`/api/courses/${id}`);
+            renderModules(courseData.modules || []);
         } catch (e) {
             console.error(e);
             structContainer.innerHTML = '<div class="text-red-500 text-center text-xs">Ошибка загрузки</div>';
@@ -326,7 +382,6 @@
             const modDiv = document.createElement('div');
             modDiv.className = "mb-4 bg-white border rounded-lg overflow-hidden animate-fade-in";
 
-            // Рендер уроков
             let lessonsHtml = '';
             if (lessons.length > 0) {
                 lessonsHtml = `<ul class="text-sm">` + lessons.map(l => {
@@ -344,7 +399,6 @@
                 lessonsHtml = `<div class="p-2 text-xs text-gray-400 italic pl-4">Нет уроков</div>`;
             }
 
-            // Рендер шапки модуля
             modDiv.innerHTML = `
                 <div class="bg-gray-100 p-2 flex justify-between items-center border-b group">
                     <h3 class="font-medium text-sm text-gray-800 pl-1 truncate w-full cursor-pointer"
@@ -366,11 +420,6 @@
 
         try {
             await apiCall('/api/modules', 'POST', { course_id: currentCourseId, title: title });
-            // Перезагружаем структуру текущего курса (ленивая перезагрузка)
-            selectCourse(currentCourseId);
-            // Хитрость: чтобы selectCourse сработал повторно для того же ID, сбросим текущий
-
-            // Правильно: просто вызвать обновление UI
             refreshStructure();
         } catch (e) { alert(e.message); }
     }
@@ -393,8 +442,6 @@
         } catch (e) { alert(e.message); }
     }
 
-
-
     async function createLesson(moduleId) {
         const title = prompt("Название урока:");
         if (!title) return;
@@ -413,23 +460,23 @@
         } catch (e) { alert(e.message); }
     }
 
-    // Вспомогательная функция для обновления правой колонки без полной перезагрузки
     async function refreshStructure() {
         if(!currentCourseId) return;
-        // Трюк: сбрасываем currentCourseId на null временно, чтобы selectCourse сработал
         const tempId = currentCourseId;
         currentCourseId = null;
         await selectCourse(tempId);
     }
 
     // --- EDITOR LOGIC (LOAD LESSON) ---
-    // --- ЗАГРУЗКА УРОКА (READ) ---
     async function loadLesson(lessonId, title) {
-        // 1. UI RESET
+        currentLessonId = lessonId;
+        insertAfterElement = null;
+
         const area = document.getElementById('content-blocks-area');
         const titleInput = document.getElementById('lesson-title-input');
         const saveBtn = document.getElementById('save-content-btn');
         const addBtn = document.getElementById('add-block-btn');
+        const resetBtn = document.getElementById('reset-answers-btn');
 
         area.innerHTML = '<div class="flex flex-col items-center justify-center h-64 text-gray-400 animate-pulse"><i class="fas fa-layer-group text-4xl mb-4"></i><p>Загрузка блоков...</p></div>';
 
@@ -437,38 +484,37 @@
         titleInput.disabled = true;
         saveBtn.disabled = true;
         addBtn.disabled = true;
+        resetBtn.disabled = true;
+        resetBtn.classList.add('cursor-not-allowed');
 
         try {
-            // 2. ЗАПРОС К API
             const lesson = await apiCall(`/api/lessons/${lessonId}`, 'GET');
 
-            // 3. ЗАПОЛНЕНИЕ ДАННЫХ
             titleInput.value = lesson.title;
             titleInput.disabled = false;
 
-            // Назначаем обработчик сохранения с ID текущего урока
             saveBtn.onclick = () => saveLessonContent(lessonId);
 
-            area.innerHTML = ''; // Очистка лоадера
+            area.innerHTML = '';
 
-            // Проверяем массив content_blocks (приходит из Go Preload)
             const blocks = lesson.content_blocks || [];
 
             if (blocks.length > 0) {
                 blocks.forEach(block => {
-                    // block.data - это JSON объект из базы ({content: "...", extra: "..."})
-                    addBlock(block.type, block.data);
+                    addBlock(block.type, block.data, block.id);
                 });
             } else {
                 area.innerHTML = `<div class="text-center py-10 text-gray-300 border-2 border-dashed border-gray-200 rounded-lg">Урок пуст. Добавьте контент.</div>`;
             }
 
-            // 4. АКТИВАЦИЯ КНОПОК
             saveBtn.disabled = false;
             saveBtn.className = "px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded shadow transition flex items-center gap-2";
 
             addBtn.disabled = false;
             addBtn.className = "inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition cursor-pointer";
+
+            resetBtn.disabled = false;
+            resetBtn.classList.remove('cursor-not-allowed');
 
         } catch (e) {
             console.error(e);
@@ -477,119 +523,140 @@
     }
 
     // --- СОХРАНЕНИЕ УРОКА (UPDATE) ---
-    // --- СОХРАНЕНИЕ УРОКА (TITLE + CONTENT) ---
-    async function saveLessonContent(id) {
-        // 1. Получаем элементы UI
+    async function saveLessonContent(id, forceReset = false) {
         const titleInput = document.getElementById('lesson-title-input');
         const container = document.getElementById('content-blocks-area');
         const saveBtn = document.getElementById('save-content-btn');
 
-        // 2. Блокируем интерфейс (Визуальная обратная связь)
         const originalBtnHtml = saveBtn.innerHTML;
         saveBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Сохранение...';
         saveBtn.disabled = true;
-
-        // Для красоты можно добавить класс opacity на контейнер, пока идет сохранение
         container.classList.add('opacity-70', 'pointer-events-none');
 
         try {
-            // 3. СБОР ДАННЫХ (SCRAPING)
             const blocks = [];
-
-            // querySelectorAll возвращает элементы в порядке их расположения в DOM.
-            // Это автоматически решает проблему сохранения порядка блоков.
             const blockElements = container.querySelectorAll('.content-block');
 
             blockElements.forEach(el => {
-                const type = el.dataset.type; // 'text', 'code', 'video', 'quiz'
+                const type = el.dataset.type;
+                const dbId = parseInt(el.dataset.dbId) || 0;
                 let blockData = {};
 
-                // --- ЛОГИКА ДЛЯ ПРОСТЫХ БЛОКОВ ---
                 if (type === 'text' || type === 'code' || type === 'video') {
                     const contentEl = el.querySelector('.block-content');
                     if (contentEl) {
-                        blockData.content = contentEl.value; // Текст, Код или URL
+                        blockData.content = contentEl.value;
                     }
                 }
-                // --- ЛОГИКА ДЛЯ ТЕСТА (QUIZ) ---
                 else if (type === 'quiz') {
                     const questionEl = el.querySelector('.quiz-question');
                     blockData.question = questionEl ? questionEl.value : '';
-
                     blockData.options = [];
-                    blockData.correct_index = 0; // По умолчанию 0, если ничего не выбрано
+                    blockData.correct_index = 0;
 
-                    // Собираем варианты ответов
                     const optionRows = el.querySelectorAll('.option-row');
-
                     optionRows.forEach((row, idx) => {
                         const textInput = row.querySelector('.quiz-option-text');
                         const radioInput = row.querySelector('.quiz-correct-radio');
-
                         if (textInput) {
                             blockData.options.push(textInput.value);
-
-                            // Если радио-кнопка выбрана, запоминаем этот индекс
                             if (radioInput && radioInput.checked) {
                                 blockData.correct_index = idx;
                             }
                         }
                     });
                 }
+                else if (type === 'vocabulary') {
+                    const titleEl = el.querySelector('.vocab-title');
+                    blockData.title = titleEl ? titleEl.value : '';
+                    blockData.words = [];
 
-                // Добавляем готовый объект блока в массив
-                // Структура соответствует Go модели: { Type: string, Data: JSONB }
+                    const wordRows = el.querySelectorAll('.vocab-row');
+                    wordRows.forEach(row => {
+                        const term = row.querySelector('.vocab-term').value;
+                        const trans = row.querySelector('.vocab-trans').value;
+                        const transl = row.querySelector('.vocab-transl').value;
+
+                        if (term.trim() !== '') {
+                            blockData.words.push({
+                                term: term,
+                                transcription: trans,
+                                translation: transl
+                            });
+                        }
+                    });
+                }
+                // === НОВАЯ ЛОГИКА ДЛЯ АУДИО-ДИКТАНТА ===
+                else if (type === 'audio_dictation') {
+                    const textEl = el.querySelector('.audio-text');
+                    blockData.text = textEl ? textEl.value : '';
+                }
+
                 blocks.push({
+                    id: dbId,
                     type: type,
                     data: blockData
                 });
             });
 
-            // 4. ОТПРАВКА ЗАПРОСОВ
-            // Шаг А: Обновляем заголовок урока (отдельный endpoint или поле)
             await apiCall(`/api/lessons/${id}`, 'PUT', { title: titleInput.value });
 
-            // Шаг Б: Полная перезапись контента (blocks массив)
-            await apiCall(`/api/lessons/${id}/content`, 'PUT', blocks);
+            const payload = {
+                blocks: blocks,
+                force_reset: forceReset
+            };
 
-            // 5. УСПЕШНОЕ ЗАВЕРШЕНИЕ
+            await apiCall(`/api/lessons/${id}/content`, 'PUT', payload);
+
             saveBtn.innerHTML = '<i class="fas fa-check"></i> Сохранено';
             saveBtn.className = "px-4 py-2 bg-green-600 text-white text-sm font-medium rounded shadow transition flex items-center gap-2";
 
-            // Обновляем название урока в левом сайдбаре (чтобы пользователь видел изменения сразу)
             updateSidebarTitle(id, titleInput.value);
 
-            // Возвращаем кнопку в исходное состояние через 1.5 сек
             setTimeout(() => {
                 saveBtn.innerHTML = '<i class="fas fa-save"></i> Сохранить';
                 saveBtn.className = "px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded shadow transition flex items-center gap-2";
                 saveBtn.disabled = false;
             }, 1500);
 
+            loadLesson(id, titleInput.value);
+
         } catch (e) {
             console.error(e);
-            alert("Ошибка сохранения: " + e.message);
-            // Возвращаем кнопку при ошибке
+
+            if (e.status === 409 && e.code === "BLOCK_HAS_ANSWERS") {
+                const confirmed = confirm("⚠️ ВНИМАНИЕ!\n\nВы пытаетесь изменить или удалить блоки, на которые студенты уже дали ответы.\n\nЕсли вы продолжите, прогресс студентов по этим вопросам будет СБРОШЕН (удален).\n\nВы уверены, что хотите продолжить?");
+                if (confirmed) {
+                    container.classList.remove('opacity-70', 'pointer-events-none');
+                    saveBtn.disabled = false;
+                    await saveLessonContent(id, true);
+                    return;
+                } else {
+                    alert("Сохранение отменено. Страница будет обновлена.");
+                    loadLesson(id, titleInput.value);
+                }
+            } else {
+                alert("Ошибка сохранения: " + e.message);
+            }
+
             saveBtn.innerHTML = originalBtnHtml;
             saveBtn.disabled = false;
         } finally {
-            // Разблокируем контейнер
             container.classList.remove('opacity-70', 'pointer-events-none');
         }
     }
 
-    // Вспомогательная функция для обновления UI списка слева
+    async function resetLessonAnswers() {
+        if (!currentLessonId) return;
+        if (!confirm("Вы уверены, что хотите сбросить ВСЕ ответы студентов для этого урока? Это действие нельзя отменить.")) return;
+        await saveLessonContent(currentLessonId, true);
+    }
+
     function updateSidebarTitle(id, newTitle) {
-        // Ищем элемент списка, у которого в onclick есть наш ID
-        // Селектор ищет тег <li>, содержащий атрибут onclick с текстом "loadLesson(ID,"
         const listItem = document.querySelector(`li[onclick*="loadLesson(${id},"]`);
         if (listItem) {
-            // Внутри li ищем span с текстом
             const textSpan = listItem.querySelector('span');
             if (textSpan) textSpan.textContent = newTitle;
-
-            // Также нужно обновить сам атрибут onclick, чтобы при следующем клике передался новый заголовок
-            // Иначе при клике заголовок сбросится на старый
             listItem.setAttribute('onclick', `loadLesson(${id}, '${newTitle.replace(/'/g, "\\'")}')`);
         }
     }
@@ -612,44 +679,40 @@
         document.getElementById('course-id').value = course.id;
         document.getElementById('input-course-title').value = course.title;
         document.getElementById('input-course-published').checked = course.is_published;
+        document.getElementById('input-course-lang').value = course.language || ""; // <--- NEW
+        document.getElementById('input-course-image').value = course.image_url || ""; // <--- NEW
         document.getElementById('modal-course-title').textContent = 'Редактировать курс';
         document.getElementById('course-modal').classList.remove('hidden');
     }
     function closeCourseModal() { document.getElementById('course-modal').classList.add('hidden'); }
     async function handleCourseSubmit(event) {
-        // 1. Останавливаем стандартную отправку формы (чтобы страница не перезагружалась)
         event.preventDefault();
-
-        // 2. Собираем данные из полей ввода по их ID
         const courseId = document.getElementById('course-id').value;
         const title = document.getElementById('input-course-title').value;
-        // const description = document.getElementById('input-course-desc').value; // Если есть описание
         const isPublished = document.getElementById('input-course-published').checked;
+        const language = document.getElementById('input-course-lang').value; // <--- NEW
+        const imageUrl = document.getElementById('input-course-image').value; // <--- NEW
 
-        // 3. Формируем объект данных (Payload)
         const payload = {
             title: title,
-            // description: description,
-            is_published: isPublished
+            is_published: isPublished,
+            language: language, // <--- NEW
+            image_url: imageUrl // <--- NEW
         };
 
         try {
             let url = '/api/courses';
             let method = 'POST';
 
-            // Если ID существует, значит мы РЕДАКТИРУЕМ, а не создаем
             if (courseId) {
                 url = `/api/courses/${courseId}`;
                 method = 'PUT';
             }
 
-            // 4. Отправляем запрос на сервер (Go)
             const response = await fetch(url, {
                 method: method,
                 headers: {
                     'Content-Type': 'application/json',
-                    // Если используете CSRF защиту, добавьте токен сюда:
-                    // 'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
                 },
                 body: JSON.stringify(payload)
             });
@@ -659,16 +722,11 @@
             }
 
             const result = await response.json();
-            console.log('Успех:', result);
-
-            // 5. Закрываем модалку и обновляем список
             closeCourseModal();
-
-            // Если у вас есть функция обновления списка курсов, вызовите её здесь
             if (typeof fetchCourses === 'function') {
                 fetchCourses();
             } else {
-                window.location.reload(); // Или просто перезагрузите страницу
+                window.location.reload();
             }
 
         } catch (error) {
@@ -678,34 +736,21 @@
     }
     async function deleteCourse(event, id) {
         event.stopPropagation();
-
-        // 1. Подтверждение пользователя
         if (!confirm(`Вы действительно хотите удалить курс с ID: ${id}?`)) {
             return;
         }
-
         try {
-            // 2. Отправка DELETE-запроса на сервер
-            // Предполагаем, что ваш Go-сервер слушает на /api/courses/{id}
             const response = await fetch(`/api/courses/${id}`, {
                 method: 'DELETE',
-                // Если требуется, добавьте заголовок аутентификации:
-                // headers: { 'Authorization': 'Bearer <ваш_токен>' }
             });
-
-            // 3. Обработка ответа сервера
             if (response.ok) {
                 alert('✅ Курс успешно удален!');
-                // Обновить список курсов на странице (например, перезагрузить страницу или удалить строку из DOM)
                 window.location.reload();
             } else {
-                // Если сервер вернул ошибку (4xx или 5xx)
                 const errorText = await response.text();
                 alert(`❌ Ошибка удаления: ${response.status} - ${errorText || 'Неизвестная ошибка'}`);
             }
-
         } catch (error) {
-            // Ошибка сети или другая ошибка JavaScript
             console.error('Сетевая ошибка при удалении:', error);
             alert('❌ Не удалось подключиться к серверу для удаления.');
         }
@@ -713,28 +758,42 @@
 
     // --- ДОБАВЛЕНИЕ БЛОКОВ ---
     const typeModal = document.getElementById('type-modal');
-    function openTypeModal() { typeModal.classList.remove('hidden'); }
+
+    function openTypeModal(triggerBtn = null) {
+        if (triggerBtn) {
+            insertAfterElement = triggerBtn.closest('.content-block');
+        } else {
+            insertAfterElement = null;
+        }
+
+        // Проверка языка для аудио-диктанта
+        const audioBtn = document.getElementById('btn-add-audio');
+        const audioWarning = document.getElementById('audio-warning');
+        if (currentCourseLang) {
+            audioBtn.disabled = false;
+            audioWarning.classList.add('hidden');
+        } else {
+            audioBtn.disabled = true;
+            audioWarning.classList.remove('hidden');
+        }
+
+        typeModal.classList.remove('hidden');
+    }
+
     function closeTypeModal() { typeModal.classList.add('hidden'); }
     typeModal.addEventListener('click', (e) => { if (e.target === typeModal) closeTypeModal(); });
 
-    // type: 'text' | 'code' | 'quiz' | 'image' | 'video'
-    // data: объект данных (при загрузке) или null
-    function addBlock(type, data = null) {
+    function addBlock(type, data = null, dbId = 0) {
         const container = document.getElementById('content-blocks-area');
-
-        // Удаляем заглушку "Урок пуст", если есть
         const hasBlocks = container.querySelector('.content-block');
         if (!hasBlocks) container.innerHTML = '';
 
-        // Генерируем уникальный ID для связывания радио-кнопок
         const uniqueId = Date.now() + Math.random().toString(36).substr(2, 9);
 
         let innerHTML = '';
         let icon = '';
         let label = '';
-
-        // Данные по умолчанию
-        const valContent = data ? data.content || '' : ''; // Для text/code
+        const valContent = data ? data.content || '' : '';
 
         if (type === 'text') {
             icon = 'fa-align-left'; label = 'Текст';
@@ -747,23 +806,42 @@
             innerHTML = `<div class="flex items-center gap-2 border border-gray-300 p-2 rounded bg-white"><i class="fab fa-youtube text-red-500 text-lg"></i><input type="text" class="block-content w-full text-sm focus:outline-none" placeholder="Ссылка на видео" value="${valContent}"></div>`;
 
         } else if (type === 'quiz') {
-            // === НОВАЯ ЛОГИКА ДЛЯ ТЕСТА ===
             icon = 'fa-list-check'; label = 'Тест (с вариантами)';
-
             const question = data ? data.question || '' : '';
-            const options = data ? data.options || [] : ['', '']; // По умолчанию 2 пустых
-            const correctIndex = data ? data.correct_index : 0;
-
             innerHTML = `
                 <div class="quiz-container">
                     <input type="text" class="quiz-question w-full border-b-2 border-indigo-100 p-2 text-sm font-bold mb-3 focus:border-indigo-500 focus:outline-none" placeholder="Введите вопрос..." value="${question}">
-
-                    <div class="quiz-options pl-2 border-l-2 border-gray-100 space-y-2">
-                        </div>
-
+                    <div class="quiz-options pl-2 border-l-2 border-gray-100 space-y-2"></div>
                     <button type="button" onclick="addQuizOption(this)" class="mt-2 text-xs text-indigo-600 hover:text-indigo-800 font-medium flex items-center gap-1">
                         <i class="fas fa-plus-circle"></i> Добавить вариант
                     </button>
+                </div>
+            `;
+        }
+        else if (type === 'vocabulary') {
+            icon = 'fa-language'; label = 'Словарь (Новые слова)';
+            const title = data ? data.title || '' : '';
+            innerHTML = `
+                <div class="vocab-container">
+                    <input type="text" class="vocab-title w-full border-b-2 border-green-100 p-2 text-sm font-bold mb-3 focus:border-green-500 focus:outline-none" placeholder="Заголовок списка (например: 'Слова к уроку')" value="${title}">
+                    <div class="vocab-list space-y-2"></div>
+                    <button type="button" onclick="addVocabularyItem(this)" class="mt-3 text-xs text-green-600 hover:text-green-800 font-medium flex items-center gap-1">
+                        <i class="fas fa-plus-circle"></i> Добавить слово
+                    </button>
+                </div>
+            `;
+        }
+        // === НОВЫЙ ТИП: АУДИО-ДИКТАНТ ===
+        else if (type === 'audio_dictation') {
+            icon = 'fa-headphones'; label = 'Аудио-диктант';
+            const text = data ? data.text || '' : '';
+            innerHTML = `
+                <div class="audio-container">
+                    <p class="text-xs text-gray-500 mb-2">Введите текст, который робот должен прочитать. Студент должен будет написать его на слух.</p>
+                    <textarea class="audio-text w-full border border-purple-200 bg-purple-50 p-3 rounded text-sm focus:ring-2 focus:ring-purple-500 focus:outline-none transition resize-y" rows="3" placeholder="Введите текст для диктанта...">${text}</textarea>
+                    <div class="mt-2 text-xs text-purple-600 flex items-center gap-1">
+                        <i class="fas fa-info-circle"></i> Язык озвучки: <b>${currentCourseLang}</b>
+                    </div>
                 </div>
             `;
         }
@@ -771,12 +849,12 @@
         const div = document.createElement('div');
         div.className = "content-block relative group bg-white border border-gray-200 rounded-lg p-1 mb-4 shadow-sm hover:shadow-md transition-all duration-200";
         div.dataset.type = type;
-        // Сохраняем ID для радио-группы
         div.dataset.blockId = uniqueId;
+        div.dataset.dbId = dbId;
 
         const toolbar = `
             <div class="flex justify-between items-center bg-gray-50 p-2 rounded-t-lg border-b border-gray-100 mb-2 handle cursor-move select-none">
-                <div class="flex items-center gap-2 text-gray-500 text-xs font-bold uppercase tracking-wider"><i class="fas ${icon}"></i> ${label}</div>
+                <div class="flex items-center gap-2 text-gray-500 text-xs font-bold uppercase tracking-wider"><i class="fas ${icon}"></i> ${label} <span class="text-[10px] text-gray-300 ml-2">ID: ${dbId || 'New'}</span></div>
                 <div class="flex items-center gap-1">
                     <button onclick="moveBlock(this, -1)" class="w-6 h-6 text-gray-400 hover:text-indigo-600"><i class="fas fa-arrow-up"></i></button>
                     <button onclick="moveBlock(this, 1)" class="w-6 h-6 text-gray-400 hover:text-indigo-600"><i class="fas fa-arrow-down"></i></button>
@@ -786,22 +864,34 @@
             </div>
         `;
 
-        div.innerHTML = toolbar + `<div class="p-2">${innerHTML}</div>`;
-        container.appendChild(div);
+        const insertBtn = `
+            <button onclick="openTypeModal(this)" class="insert-trigger w-8 h-8 rounded-full bg-indigo-600 text-white shadow-lg flex items-center justify-center hover:bg-indigo-700 transition" title="Вставить блок после этого">
+                <i class="fas fa-plus text-xs"></i>
+            </button>
+        `;
 
-        // --- ПОСТ-ОБРАБОТКА ДЛЯ QUIZ ---
-        // Если это тест, нужно отрисовать варианты ответов
+        div.innerHTML = toolbar + `<div class="p-2">${innerHTML}</div>` + insertBtn;
+
+        if (insertAfterElement) {
+            container.insertBefore(div, insertAfterElement.nextElementSibling);
+        } else {
+            container.appendChild(div);
+        }
+
         if (type === 'quiz') {
-            // Ищем кнопку "Добавить", чтобы передать её в функцию
             const addBtn = div.querySelector('button[onclick="addQuizOption(this)"]');
-
-            // Данные для инициализации
             const options = data ? data.options || ['', ''] : ['', ''];
-            const correctIndex = data ? data.correct_index : 0; // Индекс правильного ответа (0, 1...)
-
+            const correctIndex = data ? data.correct_index : 0;
             options.forEach((optText, index) => {
                 const isCorrect = (index === parseInt(correctIndex));
                 addQuizOption(addBtn, optText, isCorrect);
+            });
+        }
+        else if (type === 'vocabulary') {
+            const addBtn = div.querySelector('button[onclick="addVocabularyItem(this)"]');
+            const words = data ? data.words || [] : [{term:'', transcription:'', translation:''}];
+            words.forEach(w => {
+                addVocabularyItem(addBtn, w.term, w.transcription, w.translation);
             });
         }
 
@@ -811,61 +901,36 @@
         }
     }
 
-
-    // Перемещение блоков (swap элементов в DOM)
     function moveBlock(btn, direction) {
         const currentBlock = btn.closest('.content-block');
         const container = document.getElementById('content-blocks-area');
-
-        if (direction === -1) { // Вверх
+        if (direction === -1) {
             const prevBlock = currentBlock.previousElementSibling;
-            if (prevBlock) {
-                // Вставка перед предыдущим элементом меняет их местами
-                container.insertBefore(currentBlock, prevBlock);
-            }
-        } else if (direction === 1) { // Вниз
+            if (prevBlock) container.insertBefore(currentBlock, prevBlock);
+        } else if (direction === 1) {
             const nextBlock = currentBlock.nextElementSibling;
-            if (nextBlock) {
-                // Вставка перед элементом, идущим ПОСЛЕ следующего (т.е. после следующего)
-                container.insertBefore(nextBlock, currentBlock);
-            }
+            if (nextBlock) container.insertBefore(nextBlock, currentBlock);
         }
     }
 
-    // Удаление с анимацией
     function removeBlock(btn) {
         if(!confirm("Удалить этот блок?")) return;
-
         const block = btn.closest('.content-block');
         const container = document.getElementById('content-blocks-area');
-
-        // Анимация удаления
         block.style.opacity = '0';
         block.style.transform = 'scale(0.95)';
-
         setTimeout(() => {
             block.remove();
-
-            // --- ⬇️ ЛОГИКА ВОЗВРАТА ЗАГЛУШКИ ⬇️ ---
-            // Проверяем, остались ли блоки после удаления
             const remainingBlocks = container.querySelectorAll('.content-block');
             if (remainingBlocks.length === 0) {
                 container.innerHTML = `<div class="text-center py-10 text-gray-300 border-2 border-dashed border-gray-200 rounded-lg">Урок пуст. Добавьте контент.</div>`;
             }
-            // ---------------------------------------
-
         }, 200);
     }
 
-    // Добавить новую строку варианта ответа
     function addQuizOption(btn, value = '', isCorrect = false) {
-        // Находим контейнер вариантов внутри текущего блока
         const optionsContainer = btn.closest('.quiz-container').querySelector('.quiz-options');
-
-        // Генерируем уникальное имя для радио-кнопок внутри ЭТОГО блока
-        // Используем timestamp блока, чтобы радио-кнопки не путались между разными тестами
         const blockId = btn.closest('.content-block').dataset.blockId;
-
         const div = document.createElement('div');
         div.className = "flex items-center gap-2 mb-2 option-row";
         div.innerHTML = `
@@ -874,6 +939,28 @@
             <button type="button" onclick="this.closest('.option-row').remove()" class="text-gray-400 hover:text-red-500 p-1" title="Удалить вариант"><i class="fas fa-times"></i></button>
         `;
         optionsContainer.appendChild(div);
+    }
+
+    function addVocabularyItem(btn, term = '', trans = '', transl = '') {
+        const listContainer = btn.closest('.vocab-container').querySelector('.vocab-list');
+        const div = document.createElement('div');
+        div.className = "vocab-row grid grid-cols-12 gap-2 items-center bg-gray-50 p-2 rounded border border-gray-100";
+
+        div.innerHTML = `
+            <div class="col-span-4">
+                <input type="text" class="vocab-term w-full border border-gray-300 p-1.5 rounded text-sm focus:outline-none focus:border-green-500" placeholder="Слово" value="${term}">
+            </div>
+            <div class="col-span-3">
+                <input type="text" class="vocab-trans w-full border border-gray-300 p-1.5 rounded text-sm focus:outline-none focus:border-green-500 font-mono text-gray-600" placeholder="[Транскр.]" value="${trans}">
+            </div>
+            <div class="col-span-4">
+                <input type="text" class="vocab-transl w-full border border-gray-300 p-1.5 rounded text-sm focus:outline-none focus:border-green-500" placeholder="Перевод" value="${transl}">
+            </div>
+            <div class="col-span-1 text-center">
+                <button type="button" onclick="this.closest('.vocab-row').remove()" class="text-gray-400 hover:text-red-500 p-1"><i class="fas fa-times"></i></button>
+            </div>
+        `;
+        listContainer.appendChild(div);
     }
 </script>
 </body>

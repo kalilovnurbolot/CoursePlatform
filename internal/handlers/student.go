@@ -75,12 +75,10 @@ func (s *Handler) HandleStudentDashboard(w http.ResponseWriter, r *http.Request)
 		UserName:        toString(session.Values["name"]),
 		UserPictureURL:  toString(session.Values["picture_url"]),
 		RoleID:          roleID,
-		// ВАЖНО: передаем 'views', в которых есть и Enrollment, и посчитанный прогресс
-		StudentCourses: views,
-		CurrentPath:    r.URL.Path,
+		StudentCourses:  views,
+		CurrentPath:     r.URL.Path,
 	}
-	//w.Header().Set("Content-Type", "application/json")
-	//fmt.Fprintf(w, "%+v", data)
+
 	err = s.Tmpl.ExecuteTemplate(w, "studentDashboard", data)
 	if err != nil {
 		log.Printf("Ошибка рендеринга шаблона: %v", err)
@@ -155,8 +153,6 @@ func (s *Handler) HandleCourseLearn(w http.ResponseWriter, r *http.Request) {
 		DoneLessonsMap:  doneMap,
 		CurrentPath:     r.URL.Path,
 		RoleID:          roleID,
-
-		// Добавляем новые поля для компактного шаблона
 		TotalLessons:    totalLessons,
 		ProgressPercent: percent,
 		NextLessonID:    nextLessonID,
@@ -230,6 +226,7 @@ func (s *Handler) HandleLessonView(w http.ResponseWriter, r *http.Request) {
 		AttemptsJSON:    attemptsStr,
 		UserName:        toString(session.Values["name"]),
 		UserPictureURL:  toString(session.Values["picture_url"]),
+		CourseLanguage:  course.Language,
 	}
 	s.Tmpl.ExecuteTemplate(w, "lessonView", data)
 }
@@ -240,10 +237,9 @@ func (s *Handler) SaveQuizAttemptAPI(w http.ResponseWriter, r *http.Request) {
 	lessonID, _ := strconv.ParseUint(vars["lesson_id"], 10, 32)
 	_, userID := s.GetUserRoleID(r)
 
-	// ВАЖНО: Добавьте SelectedIndex в эту структуру!
 	var req struct {
 		BlockID       uint   `json:"block_id"`
-		SelectedIndex int    `json:"selected_index"` // <--- Без этой строки всегда будет 0
+		SelectedIndex int    `json:"selected_index"`
 		Question      string `json:"question"`
 		Answer        string `json:"answer"`
 		IsCorrect     bool   `json:"is_correct"`
@@ -255,15 +251,47 @@ func (s *Handler) SaveQuizAttemptAPI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var block models.ContentBlock
+	if err := s.DB.First(&block, req.BlockID).Error; err != nil {
+		http.Error(w, "Block not found", http.StatusNotFound)
+		return
+	}
+
+	isCorrect := req.IsCorrect
+	answerText := req.Answer
+
+	// Проверка на сервере
+	if block.Type == "quiz" {
+		var quizData struct {
+			CorrectIndex int      `json:"correct_index"`
+			Options      []string `json:"options"`
+		}
+		if err := json.Unmarshal(block.Data, &quizData); err == nil {
+			isCorrect = req.SelectedIndex == quizData.CorrectIndex
+			if req.SelectedIndex >= 0 && req.SelectedIndex < len(quizData.Options) {
+				answerText = quizData.Options[req.SelectedIndex]
+			}
+		}
+	} else if block.Type == "audio_dictation" {
+		var audioData struct {
+			Text string `json:"text"`
+		}
+		if err := json.Unmarshal(block.Data, &audioData); err == nil {
+			isCorrect = req.Answer == audioData.Text
+		}
+	}
+
 	attempt := models.QuizAttempt{
 		UserID:        userID,
 		LessonID:      uint(lessonID),
 		BlockID:       req.BlockID,
-		SelectedIndex: req.SelectedIndex, // Теперь здесь будет реальное число (0, 1, 2...)
+		SelectedIndex: req.SelectedIndex,
 		Question:      req.Question,
-		Answer:        req.Answer,
-		IsCorrect:     req.IsCorrect,
+		Answer:        answerText,
+		IsCorrect:     isCorrect,
 	}
+
+	s.DB.Where("user_id = ? AND block_id = ?", userID, req.BlockID).Delete(&models.QuizAttempt{})
 
 	if err := s.DB.Create(&attempt).Error; err != nil {
 		log.Printf("Ошибка записи в БД: %v", err)
@@ -271,7 +299,11 @@ func (s *Handler) SaveQuizAttemptAPI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"status":     "saved",
+		"is_correct": isCorrect,
+	})
 }
 
 // MarkLessonReadAPI — Отметка о прочтении (POST /api/course/{id}/lesson/{lesson_id}/done)

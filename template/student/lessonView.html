@@ -82,13 +82,14 @@
 </main>
 
 <script>
-    // Инициализация попыток
     let savedAttempts = [];
     try {
         const raw = {{if .AttemptsJSON}}{{.AttemptsJSON}}{{else}}"[]"{{end}};
         savedAttempts = typeof raw === 'string' ? JSON.parse(raw) : (raw || []);
         if (!Array.isArray(savedAttempts)) savedAttempts = [];
     } catch (e) { savedAttempts = []; }
+
+    const courseLang = "{{.CourseLanguage}}";
 
     document.addEventListener('DOMContentLoaded', renderBlocks);
 
@@ -109,9 +110,44 @@
                 } else if (type === 'video') {
                     const videoId = extractYoutubeId(data.content);
                     el.innerHTML = `<div class="aspect-video rounded-2xl overflow-hidden bg-black shadow-xl"><iframe class="w-full h-full" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen></iframe></div>`;
+                } else if (type === 'vocabulary') {
+                    el.innerHTML = renderVocabulary(data);
+                } else if (type === 'audio_dictation') {
+                    const previous = savedAttempts.find(a => a.block_id === blockId);
+                    el.innerHTML = renderAudioDictation(data, blockId, previous);
                 }
             } catch (err) { console.error("Block error:", err); }
         });
+    }
+
+    function renderVocabulary(data) {
+        const title = data.title || 'Новые слова';
+        const words = data.words || [];
+
+        if (words.length === 0) return '';
+
+        const rows = words.map(w => `
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between p-4 border-b border-gray-100 last:border-0 hover:bg-green-50/50 transition">
+                <div class="flex items-baseline gap-3">
+                    <span class="font-bold text-gray-800 text-lg">${w.term}</span>
+                    <span class="font-mono text-sm text-gray-500">${w.transcription}</span>
+                </div>
+                <div class="text-gray-700 italic mt-1 sm:mt-0">${w.translation}</div>
+            </div>
+        `).join('');
+
+        return `
+            <div class="bg-white border-l-4 border-green-500 rounded-r-xl shadow-sm my-8 overflow-hidden">
+                <div class="bg-green-50 px-6 py-3 border-b border-green-100">
+                    <h4 class="font-bold text-green-800 flex items-center gap-2">
+                        <i class="fas fa-book-open"></i> ${title}
+                    </h4>
+                </div>
+                <div class="divide-y divide-gray-100">
+                    ${rows}
+                </div>
+            </div>
+        `;
     }
 
     function renderQuiz(data, blockId, previous = null) {
@@ -145,6 +181,81 @@
             </div>`;
     }
 
+    function renderAudioDictation(data, blockId, previous = null) {
+        const isAnswered = previous !== null;
+        let resultHtml = '';
+        if (isAnswered) {
+            const isCorrect = previous.is_correct;
+            resultHtml = `
+                <div class="mt-4 p-4 rounded-lg text-sm ${isCorrect ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}">
+                    <p><b>Ваш ответ:</b> ${escapeHtml(previous.answer)}</p>
+                    ${!isCorrect ? `<p class="mt-2"><b>Правильный ответ:</b> ${escapeHtml(data.text)}</p>` : ''}
+                </div>
+            `;
+        }
+
+        return `
+            <div class="bg-white border-l-4 border-purple-500 rounded-r-xl shadow-sm my-8 p-6">
+                <h4 class="font-bold text-purple-800 mb-4">Аудио-диктант</h4>
+                <p class="text-sm text-gray-600 mb-4">Прослушайте фразу и напишите то, что услышали.</p>
+                <div class="flex items-center gap-4">
+                    <button onclick="speakText('${data.text.replace(/'/g, "\\'")}')" class="w-16 h-16 rounded-full bg-purple-600 text-white flex items-center justify-center text-2xl hover:bg-purple-700 transition shadow-lg">
+                        <i class="fas fa-play"></i>
+                    </button>
+                    <textarea id="audio-input-${blockId}" class="flex-1 border-2 border-gray-200 p-3 rounded-lg focus:ring-2 focus:ring-purple-500 focus:outline-none" rows="2" placeholder="Напишите здесь..." ${isAnswered ? 'disabled' : ''}>${isAnswered ? previous.answer : ''}</textarea>
+                </div>
+                ${!isAnswered ? `
+                <div class="text-right mt-4">
+                    <button onclick="checkAudioAnswer(this, ${blockId}, '${data.text.replace(/'/g, "\\'")}')" class="px-6 py-2 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 transition">Проверить</button>
+                </div>
+                ` : ''}
+                <div id="audio-result-${blockId}">${resultHtml}</div>
+            </div>
+        `;
+    }
+
+    function speakText(text) {
+        if (!('speechSynthesis' in window)) {
+            alert("Ваш браузер не поддерживает синтез речи.");
+            return;
+        }
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = courseLang || 'en-US';
+        window.speechSynthesis.speak(utterance);
+    }
+
+    function normalizeText(text) {
+        return text.trim().toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"");
+    }
+
+    async function checkAudioAnswer(btn, blockId, correctAnswer) {
+        const input = document.getElementById(`audio-input-${blockId}`);
+        const userAnswer = input.value;
+        const isCorrect = normalizeText(userAnswer) === normalizeText(correctAnswer);
+
+        btn.disabled = true;
+        input.disabled = true;
+
+        const resultContainer = document.getElementById(`audio-result-${blockId}`);
+        resultContainer.innerHTML = `
+            <div class="mt-4 p-4 rounded-lg text-sm ${isCorrect ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}">
+                <p><b>Ваш ответ:</b> ${escapeHtml(userAnswer)}</p>
+                ${!isCorrect ? `<p class="mt-2"><b>Правильный ответ:</b> ${escapeHtml(correctAnswer)}</p>` : ''}
+            </div>
+        `;
+
+        await fetch(`/api/course/{{.Course.ID}}/lesson/{{.Lesson.ID}}/quiz`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                block_id: blockId,
+                question: "Аудио-диктант",
+                answer: userAnswer,
+                is_correct: isCorrect
+            })
+        });
+    }
+
     async function checkAnswer(btn, blockId, idx, correctIdx, qText) {
         const parent = btn.parentElement;
         if (parent.dataset.answered === "true") return;
@@ -153,7 +264,6 @@
         const isCorrect = (idx === correctIdx);
         const ansText = btn.innerText.replace(/^[A-Z]\s/, "").trim();
 
-        // Подсветка
         parent.querySelectorAll('.quiz-option').forEach((opt, i) => {
             opt.disabled = true;
             if (i === correctIdx) {
@@ -165,7 +275,6 @@
             }
         });
 
-        // Отправка в API (Используем selected_index)
         await fetch(`/api/course/{{.Course.ID}}/lesson/{{.Lesson.ID}}/quiz`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -188,7 +297,6 @@
         if (res.ok) {
             btn.innerHTML = '<i class="fas fa-check-double mr-2"></i> Прочитано';
             btn.className = "w-full sm:w-auto px-10 py-4 rounded-2xl font-bold bg-emerald-500 text-white shadow-lg";
-            // Небольшая задержка перед обновлением для визуального эффекта
             setTimeout(() => window.location.reload(), 600);
         }
     }
