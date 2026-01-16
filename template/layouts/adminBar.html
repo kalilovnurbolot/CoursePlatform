@@ -1,96 +1,49 @@
 {{define "adminBarPanel"}}
 {{if eq .RoleID 2}}
-<div class="bg-white shadow-lg rounded-none p-3 sm:p-4 border-b border-gray-100 fixed top-0 left-0 w-full z-50">
-    <div class="max-w-7xl mx-auto">
-        <div class="flex justify-between items-center mb-4">
-            <h1 class="text-2xl font-bold text-gray-800">
-                <i class="fas fa-layer-group text-indigo-600 mr-2"></i>Конструктор Курсов
-            </h1>
-        </div>
-        <div class="flex justify-between items-center"> {{/* Изменено: Используем justify-between */}}
-            <nav class="flex flex-nowrap gap-6 sm:gap-8 overflow-x-auto pb-2">
+<div class="bg-slate-900 text-white fixed top-0 left-0 w-full z-50 shadow-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between h-14 items-center">
+            <div class="flex items-center gap-6">
+                <span class="font-bold text-lg tracking-tight flex items-center gap-2">
+                    <i class="fas fa-tools text-indigo-400"></i> Admin<span class="text-slate-400">Panel</span>
+                </span>
 
-                {{/* ----------------- Ссылки навигации остаются без изменений ----------------- */}}
+                <nav class="hidden md:flex space-x-1">
+                    {{$dashboardPath := "/admin/dashboard"}}
+                    {{$dashboardClass := "text-slate-300 hover:bg-slate-800 hover:text-white"}}
+                    {{if eq .CurrentPath $dashboardPath}}{{$dashboardClass = "bg-slate-800 text-white"}}{{end}}
+                    <a href="{{$dashboardPath}}" class="px-3 py-2 rounded-md text-xs font-medium transition {{$dashboardClass}}">Обзор</a>
 
-                {{/* 🟢 ЛОГИКА АКТИВНОГО СОСТОЯНИЯ: dashboard */}}
-                {{$dashboardPath := "/admin/dashboard"}}
-                {{$dashboardClass := "text-gray-700 bg-gray-100 hover:bg-indigo-100 hover:text-indigo-700"}}
-                {{if eq .CurrentPath $dashboardPath}}
-                {{$dashboardClass = "text-white bg-indigo-600 hover:bg-indigo-700 shadow-md"}}
-                {{end}}
+                    {{$usersPath := "/admin/enrollments"}}
+                    {{$usersClass := "text-slate-300 hover:bg-slate-800 hover:text-white"}}
+                    {{if eq .CurrentPath $usersPath}}{{$usersClass = "bg-slate-800 text-white"}}{{end}}
+                    <a href="{{$usersPath}}" class="px-3 py-2 rounded-md text-xs font-medium transition {{$usersClass}}">Заявки</a>
 
-                <a href="{{$dashboardPath}}" class="px-3 py-2 text-sm font-medium rounded-lg transition duration-150 flex-shrink-0 {{$dashboardClass}}">
-                    📊 Главная
+                    {{$createPath := "/admin/courses"}}
+                    {{$createClass := "text-slate-300 hover:bg-slate-800 hover:text-white"}}
+                    {{if eq .CurrentPath $createPath}}{{$createClass = "bg-slate-800 text-white"}}{{end}}
+                    <a href="{{$createPath}}" class="px-3 py-2 rounded-md text-xs font-medium transition {{$createClass}}">Курсы</a>
+
+                    {{$reportsPath := "/admin/reports"}}
+                    {{$reportsClass := "text-slate-300 hover:bg-slate-800 hover:text-white"}}
+                    {{if eq .CurrentPath $reportsPath}}{{$reportsClass = "bg-slate-800 text-white"}}{{end}}
+                    <a href="{{$reportsPath}}" class="px-3 py-2 rounded-md text-xs font-medium transition {{$reportsClass}}">Отчеты</a>
+                </nav>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <a href="/" class="text-xs font-medium text-slate-400 hover:text-white transition flex items-center gap-1">
+                    <i class="fas fa-external-link-alt"></i> Сайт
                 </a>
-
-                {{/* 🟢 ЛОГИКА АКТИВНОГО СОСТОЯНИЯ: users */}}
-                {{$usersPath := "/admin/enrollments"}}
-                {{$usersClass := "text-gray-700 bg-gray-100 hover:bg-indigo-100 hover:text-indigo-700"}}
-                {{if eq .CurrentPath $usersPath}}
-                {{$usersClass = "text-white bg-indigo-600 hover:bg-indigo-700 shadow-md"}}
-                {{end}}
-
-                <a href="{{$usersPath}}" class="px-3 py-2 text-sm font-medium rounded-lg transition duration-150 flex-shrink-0 {{$usersClass}}">
-                    👤 Пользователи
-                </a>
-
-                {{/* 🟢 ЛОГИКА АКТИВНОГО СОСТОЯНИЯ: courses/create */}}
-                {{$createPath := "/admin/courses"}}
-                {{$createClass := "text-gray-700 bg-gray-100 hover:bg-indigo-100 hover:text-indigo-700"}}
-                {{if eq .CurrentPath $createPath}}
-                {{$createClass = "text-white bg-indigo-600 hover:bg-indigo-700 shadow-md"}}
-                {{end}}
-
-                <a href="{{$createPath}}" class="px-3 py-2 text-sm font-medium rounded-lg transition duration-150 flex-shrink-0 {{$createClass}}">
-                    ➕ Создать Курс
-                </a>
-
-                {{/* 🟢 ЛОГИКА АКТИВНОГО СОСТОЯНИЯ: reports */}}
-                {{$reportsPath := "/admin/reports"}}
-                {{$reportsClass := "text-gray-700 bg-gray-100 hover:bg-indigo-100 hover:text-indigo-700"}}
-                {{if eq .CurrentPath $reportsPath}}
-                {{$reportsClass = "text-white bg-indigo-600 hover:bg-indigo-700 shadow-md"}}
-                {{end}}
-
-                <a href="{{$reportsPath}}" class="px-3 py-2 text-sm font-medium rounded-lg transition duration-150 flex-shrink-0 {{$reportsClass}}">
-                    📈 Отчеты
-                </a>
-
-                <a href="/" class="px-3 py-2 text-sm font-medium rounded-lg transition duration-150 flex-shrink-0 text-gray-700 bg-gray-100 hover:bg-indigo-100 hover:text-indigo-700">
-                     перейти на сайт
-                </a>
-            </nav>
-
-            {{/* 👤 МЕНЮ ПОЛЬЗОВАТЕЛЯ - ПЕРЕМЕЩЕНО СЮДА */}}
-            <div class="relative flex-shrink-0"> {{/* flex-shrink-0 для предотвращения сжатия */}}
-                <button type="button"
-                        class="max-w-xs bg-white flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 p-1 transition duration-150"
-                        onclick="toggleUserMenu()">
-                    <span class="sr-only">Открыть меню пользователя</span>
-                    <img class="h-8 w-8 rounded-full"
-                         src="{{.UserPictureURL}}"
-                         alt="{{.UserName}}">
-                </button>
-
-                <div id="user-menu"
-                     class="hidden origin-top-right absolute right-0 mt-2 w-48 rounded-lg shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none"
-                     role="menu">
-
-                    <div class="px-4 py-2 text-sm text-gray-700 truncate border-b border-gray-100">
-                        {{.UserName}}
+                <div class="relative">
+                    <button onclick="toggleUserMenu()" class="flex items-center gap-2 focus:outline-none">
+                        <img class="h-8 w-8 rounded-full border border-slate-600" src="{{.UserPictureURL}}" alt="">
+                    </button>
+                    <div id="user-menu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-1 text-slate-800 z-50">
+                        <div class="px-4 py-2 border-b border-slate-100 text-xs text-slate-500">Администратор</div>
+                        <a href="/profile" class="block px-4 py-2 text-sm hover:bg-slate-50">Профиль</a>
+                        <a href="/logout" class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50">Выйти</a>
                     </div>
-
-                    <a href="/profile"
-                       class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition duration-100"
-                       role="menuitem">
-                        Ваш Профиль
-                    </a>
-
-                    <a href="/logout"
-                       class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100 transition duration-100"
-                       role="menuitem">
-                        Выйти
-                    </a>
                 </div>
             </div>
         </div>

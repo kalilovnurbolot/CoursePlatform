@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/gorilla/sessions"
 	"golang.org/x/oauth2"
@@ -25,7 +26,6 @@ type Handler struct {
 
 func NewHandler(db *gorm.DB, store *sessions.CookieStore, config *oauth2.Config) *Handler {
 
-	// 1. Определяем функцию mod и создаем карту функций
 	funcMap := template.FuncMap{
 		"mod": func(i, j int) int {
 			return i % j
@@ -33,32 +33,27 @@ func NewHandler(db *gorm.DB, store *sessions.CookieStore, config *oauth2.Config)
 		"add": func(i, j int) int {
 			return i + j
 		},
+		"formatTime": func(t *time.Time) string {
+			if t == nil {
+				return "Никогда"
+			}
+			return t.Format("02.01.2006 в 15:04")
+		},
 	}
 
-	// 2. Инициализируем шаблон, регистрируем функции, а ЗАТЕМ парсим файлы
-	// Важно: template.New("") создает пустой шаблон, к которому мы привязываем функции.
-	tmpl, err := template.New("").Funcs(funcMap).ParseFiles(
-		"template/layouts/layout.html",
-		"template/layouts/header.html",
-		"template/layouts/footer.html",
-		"template/index.html",
-		"template/personal/profile.html",
+	tmpl := template.New("").Funcs(funcMap)
 
-		"template/admin/index.html",
-		"template/admin/users.html",
-		"template/admin/report.html",
-		"template/admin/coursePage.html",
-		"template/admin/enrollment.html",
-		"template/layouts/adminBar.html",
-		"template/layouts/headerPersonal.html",
-
-		"template/student/dashboard.html",
-		"template/student/courseContents.html",
-		"template/student/lessonView.html",
-	)
-
+	// 1. Парсим файлы в корне папки template (например, index.html)
+	_, err := tmpl.ParseGlob("template/*.html")
 	if err != nil {
-		log.Fatal(err)
+		// Не фатально, если в корне нет html, но полезно знать
+		log.Println("Warning parsing root templates:", err)
+	}
+
+	// 2. Парсим файлы во вложенных папках (например, template/admin/...)
+	_, err = tmpl.ParseGlob("template/**/*.html")
+	if err != nil {
+		log.Fatal("Error parsing nested templates:", err)
 	}
 
 	return &Handler{
@@ -93,7 +88,7 @@ type PageData struct {
 	PrevLessonID   uint
 	IsLessonDone   bool
 	AttemptsJSON   string
-	CourseLanguage string // <--- Restored
+	CourseLanguage string
 }
 
 func (h *Handler) GetAuthenticatedUserID(r *http.Request) (uint, bool) {
@@ -105,56 +100,30 @@ func (h *Handler) GetAuthenticatedUserID(r *http.Request) (uint, bool) {
 	return userID, ok && userID != 0
 }
 
-// GetUserRoleID retrieves the user's role ID from the database.
-// It returns models.RoleGuest (0) if the user is not authenticated or not found.
-// Возвращаем int для RoleID (чтобы соответствовать константам models.RoleGuest)
-// и uint для UserID.
-
-func (h *Handler) GetUserRoleID(r *http.Request) (uint, uint) { // ✅ Исправленное объявление
+func (h *Handler) GetUserRoleID(r *http.Request) (uint, uint) {
 	session, _ := h.Store.Get(r, "session")
 
 	userIDvalue := session.Values["user_id"]
 	userID, _ := userIDvalue.(uint)
 
-	// Default to the guest role (assuming models.RoleGuest is int)
-	roleID := models.RoleGuest // RoleID типа int
+	roleID := models.RoleGuest
 
 	if userID != 0 {
 		var user models.User
-		// Используем .Select("role_id")
 		err := h.DB.Select("role_id").First(&user, userID).Error
 
 		if err == nil {
-			roleID = user.RoleID // user.RoleID - int
+			roleID = user.RoleID
 		}
 	}
 
-	// Возвращаем оба значения
-	return roleID, userID // ✅ Корректный возврат
+	return roleID, userID
 }
 
 func (h *Handler) HandleMain(w http.ResponseWriter, r *http.Request) {
 	roleID, userID := h.GetUserRoleID(r)
 	session, _ := h.Store.Get(r, "session")
 
-	// 1. Загружаем список курсов
-	var allCourses []models.Course
-	if err := h.DB.Preload("Author").Where("is_published = ?", true).Find(&allCourses).Error; err != nil {
-		log.Printf("Ошибка при получении курсов: %v", err)
-		http.Error(w, "Не удалось загрузить данные курсов", http.StatusInternalServerError)
-		return
-	}
-
-	// 2. Определяем пул градиентов (для визуального эффекта)
-	colorPool := []string{
-		"from-purple-500 to-indigo-600",
-		"from-green-400 to-blue-500",
-		"from-pink-500 to-red-500",
-		"from-yellow-400 to-orange-500",
-		"from-sky-400 to-cyan-500",
-	}
-
-	// 3. Создаем PageData и вкладываем курсы и цвета
 	data := PageData{
 		Title:           "Главная",
 		IsAuthenticated: userID != 0,
@@ -162,14 +131,37 @@ func (h *Handler) HandleMain(w http.ResponseWriter, r *http.Request) {
 		RoleID:          roleID,
 		UserName:        toString(session.Values["name"]),
 		UserPictureURL:  toString(session.Values["picture_url"]),
-
-		// ⭐ Передаем загруженные данные и пул цветов
-		Courses:   allCourses,
-		ColorPool: colorPool,
 	}
 
-	// 4. Выполняем шаблон с единственным объектом 'data'
-	h.Tmpl.ExecuteTemplate(w, "index.html", data)
+	// Добавляем проверку ошибки!
+	if err := h.Tmpl.ExecuteTemplate(w, "index.html", data); err != nil {
+		log.Printf("Error rendering index.html: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	}
+}
+
+// GetHomeDataAPI - возвращает JSON с курсами и отзывами
+func (h *Handler) GetHomeDataAPI(w http.ResponseWriter, r *http.Request) {
+	var response struct {
+		Courses []models.Course `json:"courses"`
+		Reviews []models.Review `json:"reviews"`
+	}
+
+	// 1. Загружаем курсы
+	if err := h.DB.Preload("Author").Where("is_published = ?", true).Find(&response.Courses).Error; err != nil {
+		http.Error(w, "Database error", http.StatusInternalServerError)
+		return
+	}
+
+	// 2. Загружаем отзывы
+	h.DB.Preload("User").Preload("Course").
+		Where("rating >= ?", 4).
+		Order("created_at desc").
+		Limit(6).
+		Find(&response.Reviews)
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
 }
 
 func toString(v interface{}) string {
@@ -177,9 +169,7 @@ func toString(v interface{}) string {
 	return s
 }
 
-func (h *Handler) HandleAdmin(w http.ResponseWriter, r *http.Request) {
-
-}
+func (h *Handler) HandleAdmin(w http.ResponseWriter, r *http.Request) {}
 
 func (h *Handler) HandleProfile(w http.ResponseWriter, r *http.Request) {
 	session, _ := h.Store.Get(r, "session")
@@ -242,7 +232,6 @@ func (h *Handler) HandleGoogleCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// --- сохраняем через GORM ---
 	userID, err := storage.SaveUser(h.DB, userInfo)
 	if err != nil {
 		http.Error(w, "DB save error", http.StatusInternalServerError)
@@ -271,16 +260,8 @@ func (h *Handler) HandleLogout(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
-// ... внутри internal/handlers/handlers.go
-
-// HandleForbiddenPage отображает страницу ошибки 403.
 func (h *Handler) HandleForbiddenPage(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusForbidden) // Устанавливаем статус 403
-
-	// Предполагаем, что у вас есть функция для рендеринга шаблонов
-	// (В реальном приложении нужно использовать шаблонизатор, например, html/template)
-
-	// Простейший пример рендеринга:
+	w.WriteHeader(http.StatusForbidden)
 	tmpl, err := template.ParseFiles("template/exceptions/403.html")
 	if err != nil {
 		http.Error(w, "Could not load template", http.StatusInternalServerError)
@@ -288,5 +269,3 @@ func (h *Handler) HandleForbiddenPage(w http.ResponseWriter, r *http.Request) {
 	}
 	tmpl.Execute(w, nil)
 }
-
-// ⚠️ Примечание: Убедитесь, что вы импортировали "html/template"

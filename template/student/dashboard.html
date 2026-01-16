@@ -1,127 +1,103 @@
 {{define "studentDashboard"}}
+<!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{if .Title}}{{.Title}}{{else}}Моё обучение{{end}}</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
-  <style>
-    body { font-family: 'Inter', sans-serif; }
-    .glass-effect { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); }
-    .course-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-    .course-card:hover { transform: translateY(-5px); }
-  </style>
-  <script>
-    function toggleUserMenu() {
-      const menu = document.getElementById('user-menu');
-      menu.classList.toggle('hidden');
-    }
-  </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.Title}}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .card-hover:hover { transform: translateY(-4px); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1); }
+    </style>
+    <script>
+        function toggleUserMenu() {
+            document.getElementById('user-menu').classList.toggle('hidden');
+        }
+    </script>
 </head>
-<body class="bg-[#f8fafc] text-[#1e293b]">
+<body class="text-slate-800">
 
 {{template "headerPersonal" .}}
 
 <main class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-  <div class="mb-12">
-    <h1 class="text-4xl font-extrabold tracking-tight text-gray-900 mb-2">
-      Привет, {{if .UserName}}{{.UserName}}{{else}}Студент{{end}}!
-    </h1>
-    <p class="text-gray-500 text-lg">Продолжай обучение там, где остановился.</p>
-  </div>
+    <div class="flex items-center justify-between mb-8">
+        <div>
+            <h1 class="text-3xl font-bold text-slate-900">Моё обучение</h1>
+            <p class="text-slate-500 mt-1">Продолжайте с того места, где остановились</p>
+        </div>
+        <a href="/" class="text-indigo-600 hover:text-indigo-800 font-medium text-sm flex items-center transition">
+            Каталог курсов <i class="fas fa-arrow-right ml-2 text-xs"></i>
+        </a>
+    </div>
 
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-    {{range .StudentCourses}}
-    <div class="course-card group bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden flex flex-col hover:shadow-xl hover:border-indigo-200">
+    {{if .StudentCourses}}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {{range .StudentCourses}}
+        <div class="bg-white rounded-2xl border border-slate-100 shadow-sm card-hover transition-all duration-300 flex flex-col overflow-hidden h-full">
+            <!-- Обложка -->
+            <div class="h-40 bg-gradient-to-r from-indigo-500 to-purple-600 relative flex items-center justify-center overflow-hidden">
+                {{if .Enrollment.Course.ImageURL}}
+                    <img src="{{.Enrollment.Course.ImageURL}}" class="w-full h-full object-cover opacity-90">
+                {{else}}
+                    <span class="text-white/30 text-6xl font-bold select-none">{{slice .Enrollment.Course.Title 0 1}}</span>
+                {{end}}
 
-      <div class="relative h-52 overflow-hidden">
-        {{if .Enrollment.Course.ImageURL}}
-        <img src="{{.Enrollment.Course.ImageURL}}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" alt="Course Image">
-        {{else}}
-        <div class="w-full h-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
-          <i class="fas fa-book-open text-white text-5xl opacity-30"></i>
+                <!-- Статус -->
+                <div class="absolute top-4 right-4">
+                    {{if eq .ProgressPercent 100}}
+                        <span class="bg-green-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-sm">ЗАВЕРШЕНО</span>
+                    {{else}}
+                        <span class="bg-white/90 text-indigo-700 text-[10px] font-bold px-2 py-1 rounded-full shadow-sm">В ПРОЦЕССЕ</span>
+                    {{end}}
+                </div>
+            </div>
+
+            <div class="p-6 flex flex-col flex-grow">
+                <h3 class="text-lg font-bold text-slate-900 mb-2 line-clamp-2 leading-snug">
+                    {{.Enrollment.Course.Title}}
+                </h3>
+                <p class="text-xs text-slate-500 mb-6">Автор: {{.Enrollment.Course.Author.Name}}</p>
+
+                <div class="mt-auto">
+                    <div class="flex justify-between text-xs font-semibold text-slate-600 mb-2">
+                        <span>Прогресс</span>
+                        <span>{{.ProgressPercent}}%</span>
+                    </div>
+                    <div class="w-full bg-slate-100 rounded-full h-2 mb-6 overflow-hidden">
+                        <div class="bg-indigo-600 h-2 rounded-full transition-all duration-1000 ease-out" style="width: {{.ProgressPercent}}%"></div>
+                    </div>
+
+                    <a href="/course/{{.Enrollment.CourseID}}/learn" class="block w-full text-center py-3 rounded-xl font-bold text-sm transition-colors
+                        {{if eq .ProgressPercent 100}}
+                            bg-green-50 text-green-700 hover:bg-green-100 border border-green-200
+                        {{else}}
+                            bg-slate-900 text-white hover:bg-indigo-600 shadow-lg shadow-indigo-200
+                        {{end}}">
+                        {{if eq .ProgressPercent 100}}Повторить курс{{else}}Продолжить{{end}}
+                    </a>
+                </div>
+            </div>
         </div>
         {{end}}
-
-        <div class="absolute top-4 left-4">
-          {{$status := .Enrollment.Status}}
-          {{if eq $status "approved"}}
-          <span class="glass-effect text-emerald-700 text-xs font-bold px-3 py-1.5 rounded-full border border-emerald-200 shadow-sm flex items-center">
-              <span class="w-2 h-2 bg-emerald-500 rounded-full mr-2 animate-pulse"></span> Одобрено
-            </span>
-          {{else if eq $status "rejected"}}
-          <span class="glass-effect text-rose-700 text-xs font-bold px-3 py-1.5 rounded-full border border-rose-200 shadow-sm">
-              <i class="fas fa-times-circle mr-1"></i> Отклонено
-            </span>
-          {{else}}
-          <span class="glass-effect text-amber-700 text-xs font-bold px-3 py-1.5 rounded-full border border-amber-200 shadow-sm">
-              <i class="fas fa-clock mr-1"></i> Ожидает
-            </span>
-          {{end}}
-        </div>
-      </div>
-
-      <div class="p-7 flex-grow flex flex-col">
-        <div class="mb-4">
-          <h3 class="text-xl font-bold text-gray-900 leading-tight mb-2 group-hover:text-indigo-600 transition-colors">
-            {{if .Enrollment.Course.Title}}{{.Enrollment.Course.Title}}{{else}}Курс без названия{{end}}
-          </h3>
-          <div class="flex items-center text-sm text-slate-500">
-            <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center mr-2 border border-slate-200">
-              <i class="fas fa-user-graduate text-slate-400 text-xs"></i>
-            </div>
-            <span>{{if .Enrollment.Course.Author.Name}}{{.Enrollment.Course.Author.Name}}{{else}}Инструктор уточняется{{end}}</span>
-          </div>
-        </div>
-
-        <p class="text-slate-500 text-sm line-clamp-2 mb-6 min-h-[40px]">
-          {{if .Enrollment.Course.Description}}{{.Enrollment.Course.Description}}{{else}}Этот курс изменит твое представление о разработке.{{end}}
-        </p>
-
-        {{if eq .Enrollment.Status "approved"}}
-        <div class="mt-auto space-y-5">
-          <div>
-            <div class="flex justify-between items-end mb-2">
-              <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Прогресс</span>
-              <span class="text-sm font-black text-indigo-600">{{.ProgressPercent}}%</span>
-            </div>
-            <div class="w-full bg-slate-100 rounded-full h-2.5 p-0.5 border border-slate-200">
-              <div class="bg-gradient-to-r from-indigo-500 to-purple-500 h-full rounded-full shadow-[0_0_10px_rgba(99,102,241,0.4)] transition-all duration-1000"
-                   style="width: {{.ProgressPercent}}%">
-              </div>
-            </div>
-          </div>
-
-          <a href="/course/{{.Enrollment.CourseID}}/learn" class="flex items-center justify-center w-full bg-indigo-600 text-white font-bold py-4 rounded-2xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 active:scale-[0.98]">
-            {{if eq .ProgressPercent 0}}Начать обучение{{else}}Продолжить путь{{end}}
-            <i class="fas fa-arrow-right ml-2 text-xs"></i>
-          </a>
-        </div>
-        {{else}}
-        <div class="mt-auto bg-slate-50 rounded-2xl p-4 border border-slate-100 text-center">
-          <p class="text-xs text-slate-400 font-medium">Курс станет доступен после проверки администратором</p>
-        </div>
-        {{end}}
-      </div>
     </div>
     {{else}}
-    <div class="col-span-full py-24 text-center glass-effect rounded-[3rem] border-2 border-dashed border-slate-200">
-      <div class="w-24 h-24 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-6">
-        <i class="fas fa-rocket text-indigo-400 text-4xl"></i>
-      </div>
-      <h2 class="text-2xl font-bold text-slate-800 mb-2">Пока нет активных курсов</h2>
-      <p class="text-slate-500 mb-8">Самое время выбрать направление и начать свой путь!</p>
-      <a href="/catalog" class="inline-flex items-center bg-gray-900 text-white px-8 py-4 rounded-2xl font-bold hover:bg-black transition-all shadow-xl">
-        Открыть каталог
-        <i class="fas fa-chevron-right ml-2 text-xs"></i>
-      </a>
+    <div class="text-center py-20 bg-white rounded-3xl border border-dashed border-slate-200">
+        <div class="w-20 h-20 bg-indigo-50 text-indigo-300 rounded-full flex items-center justify-center mx-auto mb-6 text-4xl">
+            <i class="fas fa-book-open"></i>
+        </div>
+        <h3 class="text-xl font-bold text-slate-900 mb-2">Вы пока не записаны на курсы</h3>
+        <p class="text-slate-500 mb-8 max-w-md mx-auto">Выберите интересующую вас тему в каталоге и начните обучение прямо сейчас.</p>
+        <a href="/" class="px-8 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition shadow-lg shadow-indigo-200">
+            Перейти в каталог
+        </a>
     </div>
     {{end}}
-  </div>
 </main>
 
+{{template "footer" .}}
 </body>
 </html>
 {{end}}
