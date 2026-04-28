@@ -91,22 +91,25 @@ func (s *Handler) HandleCourseLearn(w http.ResponseWriter, r *http.Request) {
 	courseID := vars["id"]
 	roleID, userID := s.GetUserRoleID(r)
 
-	if userID == 0 {
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
-		return
-	}
-
-	// 1. ПРОВЕРКА ДОСТУПА
-	var enrollment models.Enrollment
-	err := s.DB.Where("user_id = ? AND course_id = ? AND status = ?", userID, courseID, "approved").First(&enrollment).Error
-	if err != nil {
-		http.Error(w, "Доступ запрещен или заявка не одобрена", http.StatusForbidden)
-		return
-	}
-
-	// 2. ЗАГРУЗКА ДАННЫХ КУРСА
+	// 1. ЗАГРУЗКА ДАННЫХ КУРСА
 	var course models.Course
-	s.DB.Preload("Author").Preload("Modules.Lessons").First(&course, courseID)
+	if err := s.DB.Preload("Author").Preload("Modules.Lessons").First(&course, courseID).Error; err != nil {
+		http.Error(w, "Курс не найден", http.StatusNotFound)
+		return
+	}
+
+	// 2. ПРОВЕРКА ДОСТУПА
+	if !course.IsOpen {
+		if userID == 0 {
+			http.Redirect(w, r, "/", http.StatusSeeOther)
+			return
+		}
+		var enrollment models.Enrollment
+		if err := s.DB.Where("user_id = ? AND course_id = ? AND status = ?", userID, courseID, "approved").First(&enrollment).Error; err != nil {
+			http.Error(w, "Доступ запрещен или заявка не одобрена", http.StatusForbidden)
+			return
+		}
+	}
 
 	// 3. ЗАГРУЗКА ПРОГРЕССА
 	var progress []models.LessonProgress
@@ -147,7 +150,7 @@ func (s *Handler) HandleCourseLearn(w http.ResponseWriter, r *http.Request) {
 	data := PageData{
 		Title:           course.Title,
 		Course:          course,
-		IsAuthenticated: true,
+		IsAuthenticated: userID != 0,
 		UserName:        toString(session.Values["name"]),
 		UserPictureURL:  toString(session.Values["picture_url"]),
 		DoneLessonsMap:  doneMap,
@@ -156,10 +159,10 @@ func (s *Handler) HandleCourseLearn(w http.ResponseWriter, r *http.Request) {
 		TotalLessons:    totalLessons,
 		ProgressPercent: percent,
 		NextLessonID:    nextLessonID,
+		IsCourseOpen:    course.IsOpen,
 	}
 
-	err = s.Tmpl.ExecuteTemplate(w, "courseContents", data)
-	if err != nil {
+	if err := s.Tmpl.ExecuteTemplate(w, "courseContents", data); err != nil {
 		log.Printf("Ошибка рендеринга шаблона: %v", err)
 		http.Error(w, "Ошибка сервера", http.StatusInternalServerError)
 	}
@@ -180,6 +183,19 @@ func (s *Handler) HandleLessonView(w http.ResponseWriter, r *http.Request) {
 
 	var course models.Course
 	s.DB.Preload("Modules.Lessons").First(&course, courseID)
+
+	// 2. ПРОВЕРКА ДОСТУПА
+	if !course.IsOpen && !lesson.IsFree {
+		if userID == 0 {
+			http.Redirect(w, r, "/", http.StatusSeeOther)
+			return
+		}
+		var enrollment models.Enrollment
+		if err := s.DB.Where("user_id = ? AND course_id = ? AND status = ?", userID, courseID, "approved").First(&enrollment).Error; err != nil {
+			http.Error(w, "Доступ запрещен или заявка не одобрена", http.StatusForbidden)
+			return
+		}
+	}
 
 	// 2. Логика поиска ID для кнопок "Назад" и "Вперед"
 	var allLessons []uint
@@ -219,7 +235,7 @@ func (s *Handler) HandleLessonView(w http.ResponseWriter, r *http.Request) {
 		Title:           lesson.Title,
 		Course:          course,
 		Lesson:          lesson,
-		IsAuthenticated: true,
+		IsAuthenticated: userID != 0,
 		NextLessonID:    nextID,
 		PrevLessonID:    prevID,
 		IsLessonDone:    isDone,
@@ -227,6 +243,8 @@ func (s *Handler) HandleLessonView(w http.ResponseWriter, r *http.Request) {
 		UserName:        toString(session.Values["name"]),
 		UserPictureURL:  toString(session.Values["picture_url"]),
 		CourseLanguage:  course.Language,
+		IsCourseOpen:    course.IsOpen,
+		IsLessonFree:    lesson.IsFree,
 	}
 	s.Tmpl.ExecuteTemplate(w, "lessonView", data)
 }

@@ -51,6 +51,13 @@
         </div>
     </div>
 
+    {{if .IsCourseOpen}}
+    <div class="mb-4 flex items-center gap-3 bg-green-50 border border-green-200 rounded-xl px-4 py-3">
+        <i class="fas fa-lock-open text-green-500"></i>
+        <p class="text-sm text-green-700 font-medium">Открытый курс — доступен всем без регистрации</p>
+    </div>
+    {{end}}
+
     <div class="bg-white shadow-sm border border-slate-200 rounded-2xl overflow-hidden">
         <div class="divide-y divide-slate-100">
             {{range $index, $module := .Course.Modules}}
@@ -77,10 +84,13 @@
                                 {{end}}
                             </div>
 
-                            <div class="truncate">
+                            <div class="truncate flex items-center gap-2">
                                 <span class="text-sm font-medium {{if $isDone}}text-slate-500{{else}}text-slate-700 group-hover:text-indigo-600{{end}}">
                                     {{.Title}}
                                 </span>
+                                {{if .IsFree}}
+                                <span class="flex-shrink-0 text-[9px] font-black bg-green-100 text-green-600 px-1.5 py-0.5 rounded uppercase tracking-wider">FREE</span>
+                                {{end}}
                             </div>
                         </div>
 

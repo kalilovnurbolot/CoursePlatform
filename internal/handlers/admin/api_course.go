@@ -97,6 +97,7 @@ func (s *Service) createCourse(w http.ResponseWriter, r *http.Request) {
 		Title       string `json:"title"`
 		Description string `json:"description"`
 		IsPublished bool   `json:"is_published"`
+		IsOpen      bool   `json:"is_open"`
 		Language    string `json:"language"`
 		ImageURL    string `json:"image_url"`
 	}
@@ -140,6 +141,7 @@ func (s *Service) createCourse(w http.ResponseWriter, r *http.Request) {
 		Title:       input.Title,
 		Description: input.Description,
 		IsPublished: input.IsPublished,
+		IsOpen:      input.IsOpen,
 		Language:    input.Language,
 		ImageURL:    input.ImageURL,
 		AuthorID:    userID,
@@ -184,6 +186,7 @@ func (s *Service) updateCourse(w http.ResponseWriter, r *http.Request, id int) {
 		Title       string `json:"title"`
 		Description string `json:"description"`
 		IsPublished bool   `json:"is_published"`
+		IsOpen      bool   `json:"is_open"`
 		Language    string `json:"language"`
 		ImageURL    string `json:"image_url"`
 	}
@@ -195,6 +198,7 @@ func (s *Service) updateCourse(w http.ResponseWriter, r *http.Request, id int) {
 	course.Title = input.Title
 	course.Description = input.Description
 	course.IsPublished = input.IsPublished
+	course.IsOpen = input.IsOpen
 	course.Language = input.Language
 	course.ImageURL = input.ImageURL
 
@@ -296,6 +300,7 @@ func (s *Service) CreateLessonAPI(w http.ResponseWriter, r *http.Request) {
 	var input struct {
 		ModuleID uint   `json:"module_id"`
 		Title    string `json:"title"`
+		IsFree   bool   `json:"is_free"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		jsonError(w, "Invalid JSON", http.StatusBadRequest)
@@ -305,6 +310,7 @@ func (s *Service) CreateLessonAPI(w http.ResponseWriter, r *http.Request) {
 	lesson := models.Lesson{
 		ModuleID: input.ModuleID,
 		Title:    input.Title,
+		IsFree:   input.IsFree,
 	}
 
 	if err := s.DB.Create(&lesson).Error; err != nil {

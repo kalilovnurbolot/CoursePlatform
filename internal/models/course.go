@@ -19,6 +19,7 @@ type Course struct {
 	Title       string `json:"title"`
 	Description string `json:"description"`
 	IsPublished bool   `json:"is_published"`
+	IsOpen      bool   `json:"is_open"`
 	AuthorID    uint   `json:"author_id"`
 
 	Author  User     `json:"author" gorm:"foreignKey:AuthorID"`
@@ -46,6 +47,7 @@ type Lesson struct {
 
 	Title    string `json:"title"`
 	ModuleID uint   `json:"module_id"`
+	IsFree   bool   `json:"is_free"`
 
 	ContentBlocks []ContentBlock `json:"content_blocks" gorm:"foreignKey:LessonID;constraint:OnDelete:CASCADE;"`
 }

@@ -89,6 +89,9 @@ type PageData struct {
 	IsLessonDone   bool
 	AttemptsJSON   string
 	CourseLanguage string
+
+	IsCourseOpen bool
+	IsLessonFree bool
 }
 
 func (h *Handler) GetAuthenticatedUserID(r *http.Request) (uint, bool) {
@@ -140,20 +143,26 @@ func (h *Handler) HandleMain(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// GetHomeDataAPI - возвращает JSON с курсами и отзывами
+// GetHomeDataAPI - возвращает JSON с курсами, открытыми курсами и отзывами
 func (h *Handler) GetHomeDataAPI(w http.ResponseWriter, r *http.Request) {
 	var response struct {
-		Courses []models.Course `json:"courses"`
-		Reviews []models.Review `json:"reviews"`
+		Courses     []models.Course `json:"courses"`
+		OpenCourses []models.Course `json:"open_courses"`
+		Reviews     []models.Review `json:"reviews"`
 	}
 
-	// 1. Загружаем курсы
+	// 1. Все опубликованные курсы
 	if err := h.DB.Preload("Author").Where("is_published = ?", true).Find(&response.Courses).Error; err != nil {
 		http.Error(w, "Database error", http.StatusInternalServerError)
 		return
 	}
 
-	// 2. Загружаем отзывы
+	// 2. Открытые курсы (is_open = true)
+	h.DB.Preload("Author").Preload("Modules.Lessons").
+		Where("is_published = ? AND is_open = ?", true, true).
+		Find(&response.OpenCourses)
+
+	// 3. Отзывы
 	h.DB.Preload("User").Preload("Course").
 		Where("rating >= ?", 4).
 		Order("created_at desc").

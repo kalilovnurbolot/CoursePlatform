@@ -53,6 +53,18 @@
         </div>
     </section>
 
+    <!-- OPEN COURSES SECTION -->
+    <section id="open-courses-section" class="py-20 bg-gradient-to-br from-green-50 to-emerald-50 hidden">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="text-center mb-12">
+                <span class="inline-block py-1 px-3 rounded-full bg-green-100 text-green-700 text-xs font-bold tracking-wider uppercase mb-4">Бесплатный доступ</span>
+                <h2 class="text-4xl font-bold text-slate-900 mb-4">Открытые курсы</h2>
+                <p class="text-slate-500">Изучайте без регистрации — доступно всем прямо сейчас</p>
+            </div>
+            <div id="open-courses-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"></div>
+        </div>
+    </section>
+
     <!-- COURSES SECTION -->
     <section id="courses" class="py-24 bg-white">
         <div class="max-w-7xl mx-auto px-4">
@@ -181,6 +193,7 @@
             console.log("Data loaded:", data);
 
             renderCourses(data.courses);
+            renderOpenCourses(data.open_courses);
             renderReviews(data.reviews);
 
         } catch (error) {
@@ -241,6 +254,65 @@
                             <div class="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
                                 <i class="fas fa-arrow-right text-xs"></i>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', html);
+        });
+    }
+
+    function renderOpenCourses(courses) {
+        const section = document.getElementById('open-courses-section');
+        const container = document.getElementById('open-courses-grid');
+
+        if (!courses || courses.length === 0) {
+            section.classList.add('hidden');
+            return;
+        }
+
+        section.classList.remove('hidden');
+        container.innerHTML = '';
+
+        courses.forEach((course, index) => {
+            const colorClass = colorPool[index % colorPool.length];
+            const authorName = course.author ? course.author.Name : "Неизвестный автор";
+            const authorImg = course.author ? course.author.Picture : "";
+            const totalLessons = (course.modules || []).reduce((sum, m) => sum + (m.lessons || []).length, 0);
+
+            let coverHtml = '';
+            if (course.image_url) {
+                coverHtml = `<img src="${course.image_url}" class="w-full h-full object-cover opacity-90 group-hover:scale-105 transition-transform duration-500">`;
+            } else {
+                coverHtml = `<span class="text-white/40 text-6xl font-serif font-bold opacity-50 select-none">${course.title.charAt(0)}</span>`;
+            }
+
+            const html = `
+                <div onclick="openModal(this)"
+                     class="group bg-white rounded-2xl overflow-hidden border-2 border-green-100 shadow-sm card-hover transition-all duration-300 cursor-pointer flex flex-col h-full"
+                     data-id="${course.id}"
+                     data-title="${course.title}"
+                     data-author="${authorName}"
+                     data-author-img="${authorImg}">
+
+                    <div class="relative h-48 bg-gradient-to-br ${colorClass} flex items-center justify-center overflow-hidden">
+                        ${coverHtml}
+                        <div class="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors"></div>
+                        <span class="absolute top-3 right-3 bg-green-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow">ОТКРЫТЫЙ</span>
+                    </div>
+
+                    <div class="p-6 flex flex-col flex-grow">
+                        <h3 class="text-lg font-bold text-slate-900 mb-2 leading-snug group-hover:text-green-600 transition-colors">${course.title}</h3>
+                        <p class="text-xs text-slate-400 mb-4">${totalLessons} уроков · Без регистрации</p>
+
+                        <div class="mt-auto pt-4 border-t border-slate-50 flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <img src="${authorImg}" class="w-7 h-7 rounded-full object-cover border border-white shadow-sm" onerror="this.style.display='none'">
+                                <span class="text-sm font-medium text-slate-600">${authorName}</span>
+                            </div>
+                            <span class="text-xs text-green-600 font-semibold flex items-center gap-1">
+                                <i class="fas fa-lock-open text-[10px]"></i> Открыть
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -348,7 +420,14 @@
             }
 
             const actionArea = document.getElementById('modal-action-area');
-            if (!isAuth) {
+
+            if (course.is_open) {
+                actionArea.innerHTML = `
+                    <a href="/course/${course.id}/learn" class="w-full bg-green-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-green-700 transition-all flex justify-center items-center gap-2">
+                        <i class="fas fa-lock-open"></i> Начать без регистрации
+                    </a>
+                    <p class="text-xs text-center text-green-600 font-medium">Открытый курс — вход для всех</p>`;
+            } else if (!isAuth) {
                 actionArea.innerHTML = `
                     <a href="/auth/google/login" class="w-full bg-slate-900 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-black transition-all flex justify-center items-center">
                         <i class="fab fa-google mr-2"></i> Войти для записи

@@ -35,6 +35,13 @@
         </div>
     </nav>
 
+    {{if or .IsCourseOpen .IsLessonFree}}
+    <div class="mb-6 flex items-center justify-center gap-2 text-xs text-green-600 font-medium bg-green-50 border border-green-200 rounded-lg py-2 px-4">
+        <i class="fas fa-lock-open"></i>
+        {{if .IsCourseOpen}}Открытый курс — доступен без регистрации{{else}}Бесплатный урок — доступен без регистрации{{end}}
+    </div>
+    {{end}}
+
     <header class="text-center mb-12">
         <h1 class="text-3xl md:text-4xl font-serif font-bold text-gray-900 mb-4">{{.Lesson.Title}}</h1>
         <div class="h-1 w-16 bg-indigo-500 mx-auto rounded-full"></div>

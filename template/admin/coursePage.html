@@ -190,9 +190,16 @@
                 <input type="text" id="input-course-image" class="w-full border-gray-300 rounded-md shadow-sm p-2 border focus:ring-indigo-500" placeholder="https://...">
             </div>
 
-            <div class="mb-6 flex items-center bg-gray-50 p-3 rounded-md border border-gray-100">
+            <div class="mb-3 flex items-center bg-gray-50 p-3 rounded-md border border-gray-100">
                 <input id="input-course-published" type="checkbox" class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
                 <label for="input-course-published" class="ml-2 block text-sm text-gray-900">Опубликовать курс</label>
+            </div>
+            <div class="mb-6 flex items-center bg-green-50 p-3 rounded-md border border-green-100">
+                <input id="input-course-open" type="checkbox" class="h-4 w-4 text-green-600 border-gray-300 rounded">
+                <label for="input-course-open" class="ml-2 block text-sm text-gray-900">
+                    <span class="font-medium text-green-700">Открытый курс</span>
+                    <span class="block text-xs text-gray-500 mt-0.5">Весь контент доступен без авторизации и записи</span>
+                </label>
             </div>
             <div class="flex justify-end space-x-2">
                 <button type="button" onclick="closeCourseModal()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 text-sm">Отмена</button>
@@ -387,10 +394,16 @@
                 lessonsHtml = `<ul class="text-sm">` + lessons.map(l => {
                     const lId = l.id || l.ID;
                     const lTitle = l.title || l.Title;
+                    const isFree = l.is_free || false;
+                    const freeBadge = isFree
+                        ? `<span class="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-medium">FREE</span>`
+                        : '';
+                    const freeIcon = isFree ? 'fa-lock-open text-green-500' : 'fa-lock text-gray-300';
                     return `
-                    <li onclick="loadLesson(${lId}, '${lTitle}')" class="p-2 pl-4 border-l-4 border-transparent hover:border-indigo-400 hover:bg-gray-50 flex justify-between items-center cursor-pointer group transition">
-                        <span class="text-gray-600 group-hover:text-gray-900 truncate">${lTitle}</span>
-                        <div class="hidden group-hover:flex space-x-2">
+                    <li onclick="loadLesson(${lId}, '${lTitle}')" class="p-2 pl-4 border-l-4 ${isFree ? 'border-green-300' : 'border-transparent'} hover:border-indigo-400 hover:bg-gray-50 flex justify-between items-center cursor-pointer group transition">
+                        <span class="text-gray-600 group-hover:text-gray-900 truncate flex items-center gap-1.5">${lTitle} ${freeBadge}</span>
+                        <div class="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                             <i onclick="event.stopPropagation(); toggleLessonFree(${lId}, ${!isFree})" class="fas ${freeIcon} text-xs cursor-pointer hover:text-green-600" title="${isFree ? 'Сделать платным' : 'Сделать бесплатным'}"></i>
                              <i onclick="event.stopPropagation(); deleteLesson(${lId})" class="fas fa-trash text-xs text-gray-300 hover:text-red-500" title="Удалить урок"></i>
                         </div>
                     </li>`;
@@ -456,6 +469,13 @@
         if (!confirm("Удалить урок?")) return;
         try {
             await apiCall(`/api/lessons/${id}`, 'DELETE');
+            refreshStructure();
+        } catch (e) { alert(e.message); }
+    }
+
+    async function toggleLessonFree(id, isFree) {
+        try {
+            await apiCall(`/api/lessons/${id}`, 'PUT', { is_free: isFree });
             refreshStructure();
         } catch (e) { alert(e.message); }
     }
@@ -679,8 +699,9 @@
         document.getElementById('course-id').value = course.id;
         document.getElementById('input-course-title').value = course.title;
         document.getElementById('input-course-published').checked = course.is_published;
-        document.getElementById('input-course-lang').value = course.language || ""; // <--- NEW
-        document.getElementById('input-course-image').value = course.image_url || ""; // <--- NEW
+        document.getElementById('input-course-open').checked = course.is_open || false;
+        document.getElementById('input-course-lang').value = course.language || "";
+        document.getElementById('input-course-image').value = course.image_url || "";
         document.getElementById('modal-course-title').textContent = 'Редактировать курс';
         document.getElementById('course-modal').classList.remove('hidden');
     }
@@ -690,14 +711,16 @@
         const courseId = document.getElementById('course-id').value;
         const title = document.getElementById('input-course-title').value;
         const isPublished = document.getElementById('input-course-published').checked;
-        const language = document.getElementById('input-course-lang').value; // <--- NEW
-        const imageUrl = document.getElementById('input-course-image').value; // <--- NEW
+        const isOpen = document.getElementById('input-course-open').checked;
+        const language = document.getElementById('input-course-lang').value;
+        const imageUrl = document.getElementById('input-course-image').value;
 
         const payload = {
             title: title,
             is_published: isPublished,
-            language: language, // <--- NEW
-            image_url: imageUrl // <--- NEW
+            is_open: isOpen,
+            language: language,
+            image_url: imageUrl
         };
 
         try {

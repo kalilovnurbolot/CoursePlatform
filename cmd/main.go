@@ -102,10 +102,10 @@ func main() {
 	r.HandleFunc("/api/courses/{id}/structure", adminService.GetCourseStructure).Methods("GET")
 	r.HandleFunc("/api/enroll", userMiddleware(adminService.SubmitEnrollment)).Methods("POST")
 	r.HandleFunc("/my-courses", userMiddleware(h.HandleStudentDashboard)).Methods("GET")
-	r.HandleFunc("/course/{id:[0-9]+}/learn", userMiddleware(h.HandleCourseLearn)).Methods("GET")
+	r.HandleFunc("/course/{id:[0-9]+}/learn", h.HandleCourseLearn).Methods("GET")
 	r.HandleFunc("/api/course/{id:[0-9]+}/lesson/{lesson_id:[0-9]+}/quiz", userMiddleware(h.SaveQuizAttemptAPI)).Methods("POST")
 	r.HandleFunc("/api/course/{id:[0-9]+}/lesson/{lesson_id:[0-9]+}/done", userMiddleware(h.MarkLessonReadAPI)).Methods("POST")
-	r.HandleFunc("/course/{id:[0-9]+}/lesson/{lesson_id:[0-9]+}", userMiddleware(h.HandleLessonView)).Methods("GET")
+	r.HandleFunc("/course/{id:[0-9]+}/lesson/{lesson_id:[0-9]+}", h.HandleLessonView).Methods("GET")
 
 	// --- КОММЕНТАРИИ И ОТЗЫВЫ ---
 	r.HandleFunc("/api/lessons/{id}/comments", userMiddleware(h.AddCommentAPI)).Methods("POST")
