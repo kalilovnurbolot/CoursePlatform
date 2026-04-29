@@ -69,14 +69,17 @@ func (s *Handler) HandleStudentDashboard(w http.ResponseWriter, r *http.Request)
 		})
 	}
 
+	lang := s.DetectLang(r)
 	data := PageData{
-		Title:           "Моё обучение",
+		Title:           "My learning",
 		IsAuthenticated: true,
 		UserName:        toString(session.Values["name"]),
 		UserPictureURL:  toString(session.Values["picture_url"]),
 		RoleID:          roleID,
 		StudentCourses:  views,
 		CurrentPath:     r.URL.Path,
+		Lang:            lang,
+		TransJSON:       BuildTransJSON(lang),
 	}
 
 	err = s.Tmpl.ExecuteTemplate(w, "studentDashboard", data)
@@ -147,6 +150,7 @@ func (s *Handler) HandleCourseLearn(w http.ResponseWriter, r *http.Request) {
 	session, _ := s.Store.Get(r, "session")
 
 	// 5. ПОДГОТОВКА ДАННЫХ
+	lang := s.DetectLang(r)
 	data := PageData{
 		Title:           course.Title,
 		Course:          course,
@@ -160,6 +164,8 @@ func (s *Handler) HandleCourseLearn(w http.ResponseWriter, r *http.Request) {
 		ProgressPercent: percent,
 		NextLessonID:    nextLessonID,
 		IsCourseOpen:    course.IsOpen,
+		Lang:            lang,
+		TransJSON:       BuildTransJSON(lang),
 	}
 
 	if err := s.Tmpl.ExecuteTemplate(w, "courseContents", data); err != nil {
@@ -231,6 +237,7 @@ func (s *Handler) HandleLessonView(w http.ResponseWriter, r *http.Request) {
 	}
 
 	session, _ := s.Store.Get(r, "session")
+	lang := s.DetectLang(r)
 	data := PageData{
 		Title:           lesson.Title,
 		Course:          course,
@@ -245,6 +252,8 @@ func (s *Handler) HandleLessonView(w http.ResponseWriter, r *http.Request) {
 		CourseLanguage:  course.Language,
 		IsCourseOpen:    course.IsOpen,
 		IsLessonFree:    lesson.IsFree,
+		Lang:            lang,
+		TransJSON:       BuildTransJSON(lang),
 	}
 	s.Tmpl.ExecuteTemplate(w, "lessonView", data)
 }

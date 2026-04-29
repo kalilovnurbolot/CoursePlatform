@@ -53,20 +53,20 @@ func (s *Service) HandleEnrollmentsPage(w http.ResponseWriter, r *http.Request) 
 		http.Error(w, "Ошибка получения сессии. Попробуйте войти снова.", http.StatusInternalServerError)
 		return
 	}
+	lang := s.DetectLang(r)
 	data := handlers.PageData{
-		Title:           "Главная",
+		Title:           "My Enrollments",
 		IsAuthenticated: userID != 0,
 		UserID:          userID,
 		RoleID:          roleID,
 		UserName:        toString(session.Values["name"]),
 		UserPictureURL:  toString(session.Values["picture_url"]),
 		CurrentPath:     r.URL.Path,
-
-		// Передаем курсы в шаблон, чтобы заполнить <select>
-		Courses: courses,
+		Lang:            lang,
+		TransJSON:       handlers.BuildTransJSON(lang),
+		Courses:         courses,
 	}
 
-	// Рендерим шаблон (создадим его ниже)
 	s.Handler.Tmpl.ExecuteTemplate(w, "adminEnrollments", data)
 }
 

@@ -41,14 +41,17 @@ func (serv Service) HandleAdminPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	lang := serv.DetectLang(r)
 	data := handlers.PageData{
-		Title:           "Панель Администратора",
+		Title:           "Dashboard",
 		IsAuthenticated: userID != 0,
 		UserID:          userID,
 		RoleID:          user.RoleID,
 		UserName:        user.Name,
 		UserPictureURL:  user.Picture,
 		CurrentPath:     r.URL.Path,
+		Lang:            lang,
+		TransJSON:       handlers.BuildTransJSON(lang),
 	}
 
 	serv.Tmpl.ExecuteTemplate(w, "adminIndex", data)
@@ -83,14 +86,17 @@ func (serv Service) HandleUsersPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	lang := serv.DetectLang(r)
 	data := handlers.PageData{
-		Title:           "Панель Администратора",
+		Title:           "Users",
 		IsAuthenticated: userID != 0,
 		UserID:          userID,
 		RoleID:          user.RoleID,
 		UserName:        user.Name,
 		UserPictureURL:  user.Picture,
 		CurrentPath:     r.URL.Path,
+		Lang:            lang,
+		TransJSON:       handlers.BuildTransJSON(lang),
 	}
 
 	serv.Tmpl.ExecuteTemplate(w, "adminUsers", data)
@@ -125,14 +131,17 @@ func (serv Service) HandleCoursePage(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/", http.StatusForbidden)
 		return
 	}
+	lang2 := serv.DetectLang(r)
 	data := handlers.PageData{
-		Title:           "Панель Администратора",
+		Title:           "Courses",
 		IsAuthenticated: userID != 0,
 		UserID:          userID,
 		RoleID:          user.RoleID,
 		UserName:        user.Name,
 		UserPictureURL:  user.Picture,
 		CurrentPath:     r.URL.Path,
+		Lang:            lang2,
+		TransJSON:       handlers.BuildTransJSON(lang2),
 	}
 
 	serv.Tmpl.ExecuteTemplate(w, "adminCourse", data)
@@ -168,14 +177,17 @@ func (serv Service) HandleReportPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	lang3 := serv.DetectLang(r)
 	data := handlers.PageData{
-		Title:           "Панель Администратора",
+		Title:           "Reports",
 		IsAuthenticated: userID != 0,
 		UserID:          userID,
 		RoleID:          user.RoleID,
 		UserName:        user.Name,
 		UserPictureURL:  user.Picture,
 		CurrentPath:     r.URL.Path,
+		Lang:            lang3,
+		TransJSON:       handlers.BuildTransJSON(lang3),
 	}
 
 	serv.Tmpl.ExecuteTemplate(w, "adminReport", data)

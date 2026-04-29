@@ -13,6 +13,7 @@ import (
 	"github.com/s/onlineCourse/internal/database"
 	"github.com/s/onlineCourse/internal/handlers"
 	"github.com/s/onlineCourse/internal/handlers/admin"
+	"github.com/s/onlineCourse/internal/i18n"
 	"github.com/s/onlineCourse/internal/middleware"
 	"github.com/s/onlineCourse/internal/models"
 )
@@ -20,20 +21,24 @@ import (
 func main() {
 	err := godotenv.Load()
 	if err != nil {
-		log.Println("Предупреждение: Не удалось загрузить файл .env. Используются системные переменные.")
+		log.Println("Warning: .env not found, using system environment variables.")
+	}
+
+	if err := i18n.Load("locales"); err != nil {
+		log.Fatal("Failed to load translations:", err)
 	}
 
 	db, err := database.Connect()
 	if err != nil {
-		log.Fatal("Ошибка подключения к БД:", err)
+		log.Fatal("DB connection error:", err)
 	}
 
 	if err := database.AutoMigrate(db); err != nil {
-		log.Fatal("Ошибка миграции:", err)
+		log.Fatal("Migration error:", err)
 	}
 
 	if err := database.Seed(db); err != nil {
-		log.Printf("Предупреждение: ошибка сидинга: %v", err)
+		log.Printf("Warning: seed error: %v", err)
 	}
 
 	clientId := os.Getenv("GOOGLE_CLIENT_ID")
@@ -41,7 +46,7 @@ func main() {
 	redirectURL := os.Getenv("GOOGLE_REDIRECT_URL")
 
 	if clientId == "" || clientSecret == "" || redirectURL == "" {
-		log.Fatal("Ошибка: Переменные GOOGLE_... не установлены в .env")
+		log.Fatal("Error: GOOGLE_* environment variables are not set")
 	}
 
 	oauthConfig := auth.InitGoogleOAuthConfig(clientId, clientSecret, redirectURL)
@@ -49,7 +54,7 @@ func main() {
 	sessionKey := os.Getenv("SESSION_KEY")
 	if sessionKey == "" {
 		sessionKey = "super-secret-default-key"
-		log.Println("Внимание: SESSION_KEY не задан, используется дефолтный.")
+		log.Println("Warning: SESSION_KEY not set, using default.")
 	}
 	store := sessions.NewCookieStore([]byte(sessionKey))
 	store.Options = &sessions.Options{
@@ -69,7 +74,8 @@ func main() {
 	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
 
 	r.HandleFunc("/", h.HandleMain).Methods("GET")
-	r.HandleFunc("/api/home", h.GetHomeDataAPI).Methods("GET") // <--- NEW
+	r.HandleFunc("/api/home", h.GetHomeDataAPI).Methods("GET")
+	r.HandleFunc("/api/language", h.HandleSetLanguage).Methods("POST")
 
 	r.HandleFunc("/auth/google/login", h.HandleGoogleLogin).Methods("GET")
 	r.HandleFunc("/auth/google/callback", h.HandleGoogleCallback).Methods("GET")
@@ -77,13 +83,13 @@ func main() {
 
 	r.HandleFunc("/personal", h.HandleProfile).Methods("GET")
 
-	// Админка
+	// Admin pages
 	r.HandleFunc("/admin/dashboard", adminMiddleware(adminService.HandleAdminPage)).Methods("GET")
 	r.HandleFunc("/admin/reports", adminMiddleware(adminService.HandleReportPage)).Methods("GET")
 	r.HandleFunc("/admin/courses", adminMiddleware(adminService.HandleCoursePage)).Methods("GET")
 	r.HandleFunc("/admin/users", adminMiddleware(adminService.HandleUsersPage)).Methods("GET")
 
-	// API Админки
+	// Admin API
 	r.HandleFunc("/api/courses", adminMiddleware(adminService.HandleCoursesAPI)).Methods("GET", "POST")
 	r.HandleFunc("/api/courses/{id}", adminMiddleware(adminService.HandleCourseByIDAPI)).Methods("GET", "PUT", "DELETE")
 	r.HandleFunc("/api/modules", adminMiddleware(adminService.CreateModuleAPI)).Methods("POST")
@@ -98,7 +104,7 @@ func main() {
 	r.HandleFunc("/api/admin/enrollments", adminMiddleware(adminService.GetEnrollmentsAPI)).Methods("GET")
 	r.HandleFunc("/api/admin/enrollments/{id}", adminMiddleware(adminService.UpdateEnrollmentStatusAPI)).Methods("PUT")
 
-	// Студент
+	// Student
 	r.HandleFunc("/api/courses/{id}/structure", adminService.GetCourseStructure).Methods("GET")
 	r.HandleFunc("/api/enroll", userMiddleware(adminService.SubmitEnrollment)).Methods("POST")
 	r.HandleFunc("/my-courses", userMiddleware(h.HandleStudentDashboard)).Methods("GET")
@@ -107,7 +113,7 @@ func main() {
 	r.HandleFunc("/api/course/{id:[0-9]+}/lesson/{lesson_id:[0-9]+}/done", userMiddleware(h.MarkLessonReadAPI)).Methods("POST")
 	r.HandleFunc("/course/{id:[0-9]+}/lesson/{lesson_id:[0-9]+}", h.HandleLessonView).Methods("GET")
 
-	// --- КОММЕНТАРИИ И ОТЗЫВЫ ---
+	// Comments & Reviews
 	r.HandleFunc("/api/lessons/{id}/comments", userMiddleware(h.AddCommentAPI)).Methods("POST")
 	r.HandleFunc("/api/lessons/{id}/comments", userMiddleware(h.GetCommentsAPI)).Methods("GET")
 	r.HandleFunc("/api/courses/{id}/reviews", userMiddleware(h.AddReviewAPI)).Methods("POST")
@@ -118,7 +124,7 @@ func main() {
 		port = "8080"
 	}
 	corsHandler := corsMiddleware(r)
-	fmt.Printf("Сервер запущен: http://localhost:%s\n", port)
+	fmt.Printf("Server started: http://localhost:%s\n", port)
 	log.Fatal(http.ListenAndServe(":"+port, corsHandler))
 }
 

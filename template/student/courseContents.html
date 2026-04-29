@@ -1,6 +1,6 @@
 {{define "courseContents"}}
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="{{.Lang}}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,15 +11,10 @@
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f8f9fa; }
         .font-serif { font-family: 'Playfair Display', serif; }
-        /* Эффект для строк уроков */
         .lesson-row:hover .lesson-icon { background-color: #4f46e5; color: white; }
     </style>
-    <script>
-        function toggleUserMenu() {
-            const menu = document.getElementById('user-menu');
-            menu.classList.toggle('hidden');
-        }
-    </script>
+    <script>const I18N = {{.TransJSON}};</script>
+    <script>function t(k){return I18N[k]||k;}</script>
 </head>
 <body class="text-slate-800">
 
@@ -31,17 +26,17 @@
         <div>
             <nav class="mb-2">
                 <a href="/my-courses" class="text-xs font-bold text-indigo-600 uppercase tracking-widest hover:opacity-70 transition">
-                    <i class="fas fa-chevron-left mr-1"></i> К списку курсов
+                    <i class="fas fa-chevron-left mr-1"></i> {{ T .Lang "course.back_to_list" }}
                 </a>
             </nav>
             <h1 class="text-2xl md:text-3xl font-serif font-bold text-slate-900 leading-tight">{{.Course.Title}}</h1>
-            <p class="text-sm text-slate-500 mt-1">Автор: <span class="font-medium text-slate-700">{{with .Course.Author.Name}}{{.}}{{else}}Инструктор{{end}}</span></p>
+            <p class="text-sm text-slate-500 mt-1">{{ T .Lang "course.author_prefix" }} <span class="font-medium text-slate-700">{{with .Course.Author.Name}}{{.}}{{else}}{{ T $.Lang "course.instructor" }}{{end}}</span></p>
         </div>
 
         <div class="bg-white border border-slate-200 rounded-2xl px-4 py-3 flex items-center shadow-sm">
             <div class="mr-4 text-right">
-                <p class="text-[10px] font-black text-slate-400 uppercase tracking-tighter leading-none">Прогресс чтения</p>
-                <p class="text-sm font-bold text-slate-700 mt-1">{{len .DoneLessonsMap}} / {{.TotalLessons}} уроков</p>
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-tighter leading-none">{{ T .Lang "course.reading_progress" }}</p>
+                <p class="text-sm font-bold text-slate-700 mt-1">{{len .DoneLessonsMap}} / {{.TotalLessons}} {{ T .Lang "course.lessons_unit" }}</p>
             </div>
             <div class="relative w-12 h-12">
                 <div class="w-full h-full rounded-full border-4 border-slate-100 flex items-center justify-center">
@@ -54,7 +49,7 @@
     {{if .IsCourseOpen}}
     <div class="mb-4 flex items-center gap-3 bg-green-50 border border-green-200 rounded-xl px-4 py-3">
         <i class="fas fa-lock-open text-green-500"></i>
-        <p class="text-sm text-green-700 font-medium">Открытый курс — доступен всем без регистрации</p>
+        <p class="text-sm text-green-700 font-medium">{{ T .Lang "course.open_hint" }}</p>
     </div>
     {{end}}
 
@@ -64,7 +59,7 @@
             <div class="p-6">
                 <div class="flex items-center mb-5">
                     <span class="text-[10px] font-bold text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded uppercase tracking-widest mr-3">
-                        Глава {{add $index 1}}
+                        {{ T $.Lang "course.chapter" }} {{add $index 1}}
                     </span>
                     <h2 class="text-sm font-black uppercase tracking-tight text-slate-800">{{$module.Title}}</h2>
                 </div>
@@ -96,24 +91,24 @@
 
                         <div class="flex-shrink-0 ml-4">
                             {{if $isDone}}
-                            <span class="text-[9px] font-black text-emerald-600 uppercase tracking-tighter">Прочитано</span>
+                            <span class="text-[9px] font-black text-emerald-600 uppercase tracking-tighter">{{ T $.Lang "course.lesson_read" }}</span>
                             {{else}}
                             <div class="flex items-center text-slate-300 group-hover:text-indigo-500 transition-colors">
-                                <span class="text-[9px] font-bold uppercase tracking-tighter mr-2 opacity-0 group-hover:opacity-100 transition-opacity">Читать</span>
+                                <span class="text-[9px] font-bold uppercase tracking-tighter mr-2 opacity-0 group-hover:opacity-100 transition-opacity">{{ T $.Lang "course.lesson_read_action" }}</span>
                                 <i class="fas fa-chevron-right text-[10px]"></i>
                             </div>
                             {{end}}
                         </div>
                     </a>
                     {{else}}
-                    <p class="text-xs text-slate-400 italic ml-11">Страницы еще не добавлены</p>
+                    <p class="text-xs text-slate-400 italic ml-11">{{ T $.Lang "course.no_pages" }}</p>
                     {{end}}
                 </div>
             </div>
             {{else}}
             <div class="p-16 text-center">
                 <i class="fas fa-feather-alt text-slate-200 text-4xl mb-4"></i>
-                <p class="text-slate-400 text-sm italic">Книга в процессе написания...</p>
+                <p class="text-slate-400 text-sm italic">{{ T .Lang "course.in_writing" }}</p>
             </div>
             {{end}}
         </div>
@@ -123,19 +118,18 @@
     {{if lt .ProgressPercent 100}}
     <div class="mt-8 flex justify-center">
         <a href="/course/{{.Course.ID}}/lesson/{{.NextLessonID}}" class="bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold text-sm shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition active:scale-95">
-            Продолжить чтение
+            {{ T .Lang "course.continue_reading" }}
         </a>
     </div>
     {{end}}
     {{end}}
 
-    <!-- СЕКЦИЯ ОТЗЫВОВ -->
+    <!-- REVIEWS SECTION -->
     <section class="mt-16 border-t border-slate-200 pt-10">
-        <h3 class="text-2xl font-bold text-slate-900 mb-6">Отзывы о курсе</h3>
+        <h3 class="text-2xl font-bold text-slate-900 mb-6">{{ T .Lang "course.reviews_title" }}</h3>
 
-        <!-- Форма отзыва -->
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 mb-8">
-            <h4 class="text-sm font-bold text-slate-700 mb-3">Оставьте свой отзыв</h4>
+            <h4 class="text-sm font-bold text-slate-700 mb-3">{{ T .Lang "course.leave_review" }}</h4>
             <div class="flex items-center gap-2 mb-4" id="rating-stars">
                 <button onclick="setRating(1)" class="text-2xl text-gray-300 hover:text-yellow-400 transition"><i class="fas fa-star"></i></button>
                 <button onclick="setRating(2)" class="text-2xl text-gray-300 hover:text-yellow-400 transition"><i class="fas fa-star"></i></button>
@@ -143,15 +137,14 @@
                 <button onclick="setRating(4)" class="text-2xl text-gray-300 hover:text-yellow-400 transition"><i class="fas fa-star"></i></button>
                 <button onclick="setRating(5)" class="text-2xl text-gray-300 hover:text-yellow-400 transition"><i class="fas fa-star"></i></button>
             </div>
-            <textarea id="review-content" class="w-full border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none resize-none" rows="3" placeholder="Что вам понравилось?"></textarea>
+            <textarea id="review-content" class="w-full border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none resize-none" rows="3" placeholder="{{ T .Lang "course.review_placeholder" }}"></textarea>
             <div class="flex justify-end mt-3">
-                <button onclick="postReview()" class="px-6 py-2 bg-indigo-600 text-white text-sm font-bold rounded-lg hover:bg-indigo-700 transition">Опубликовать</button>
+                <button onclick="postReview()" class="px-6 py-2 bg-indigo-600 text-white text-sm font-bold rounded-lg hover:bg-indigo-700 transition">{{ T .Lang "course.publish" }}</button>
             </div>
         </div>
 
-        <!-- Список отзывов -->
         <div id="reviews-list" class="space-y-6">
-            <div class="text-center text-slate-400 py-4">Загрузка отзывов...</div>
+            <div class="text-center text-slate-400 py-4">{{ T .Lang "course.reviews_loading" }}</div>
         </div>
     </section>
 
@@ -167,13 +160,8 @@
         currentRating = rating;
         const stars = document.getElementById('rating-stars').children;
         for (let i = 0; i < stars.length; i++) {
-            if (i < rating) {
-                stars[i].classList.remove('text-gray-300');
-                stars[i].classList.add('text-yellow-400');
-            } else {
-                stars[i].classList.remove('text-yellow-400');
-                stars[i].classList.add('text-gray-300');
-            }
+            stars[i].classList.toggle('text-yellow-400', i < rating);
+            stars[i].classList.toggle('text-gray-300', i >= rating);
         }
     }
 
@@ -182,12 +170,10 @@
         try {
             const res = await fetch(`/api/courses/${courseId}/reviews`);
             const reviews = await res.json();
-
             if (!reviews || reviews.length === 0) {
-                container.innerHTML = '<div class="text-center text-slate-400 py-4 italic">Отзывов пока нет.</div>';
+                container.innerHTML = `<div class="text-center text-slate-400 py-4 italic">${t('course.no_reviews')}</div>`;
                 return;
             }
-
             container.innerHTML = reviews.map(r => `
                 <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
                     <div class="flex justify-between items-start mb-2">
@@ -208,44 +194,36 @@
             `).join('');
         } catch (e) {
             console.error(e);
-            container.innerHTML = '<div class="text-red-500 text-center">Ошибка загрузки отзывов.</div>';
+            container.innerHTML = `<div class="text-red-500 text-center">${t('course.reviews_error')}</div>`;
         }
     }
 
     async function postReview() {
         const content = document.getElementById('review-content').value.trim();
-        if (currentRating === 0) {
-            alert('Пожалуйста, поставьте оценку.');
-            return;
-        }
-        if (!content) {
-            alert('Пожалуйста, напишите отзыв.');
-            return;
-        }
-
+        if (currentRating === 0) { alert('★'); return; }
+        if (!content) return;
         try {
             const res = await fetch(`/api/courses/${courseId}/reviews`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ rating: currentRating, content })
             });
-
             if (res.ok) {
                 document.getElementById('review-content').value = '';
                 setRating(0);
                 loadReviews();
             } else {
-                alert('Не удалось отправить отзыв');
+                alert(t('course.review_send_error'));
             }
         } catch (e) {
             console.error(e);
-            alert('Ошибка сети');
+            alert(t('common.network_error'));
         }
     }
 
-    function escapeHtml(t) {
+    function escapeHtml(s) {
         const m = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
-        return t.replace(/[&<>"']/g, s => m[s]);
+        return String(s).replace(/[&<>"']/g, c => m[c]);
     }
 </script>
 

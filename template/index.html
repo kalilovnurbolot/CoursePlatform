@@ -1,101 +1,100 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="{{.Lang}}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{.Title}} | Платформа Онлайн-Курсов</title>
+    <title>{{.Title}} | CoursePlatform</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
         h1, h2, h3 { font-family: 'Playfair Display', serif; }
-        .glass { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.3); }
+        .glass { background: rgba(255,255,255,0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.3); }
         .hero-gradient { background: radial-gradient(circle at top right, #e0e7ff, #f8fafc); }
-        .card-hover:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
+        .card-hover:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); }
         .modal-scroll::-webkit-scrollbar { width: 6px; }
         .modal-scroll::-webkit-scrollbar-track { background: transparent; }
         .modal-scroll::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 20px; }
     </style>
-    <script> function toggleUserMenu() { document.getElementById('user-menu').classList.toggle('hidden'); }</script>
+    <!-- i18n translations for JS -->
+    <script>const I18N = {{.TransJSON}};</script>
+    <script>function t(k){return I18N[k]||k;}</script>
 </head>
 <body class="text-slate-800">
 
 {{template "header" .}}
 
 <main>
-    <!-- HERO SECTION -->
+    <!-- HERO -->
     <section class="hero-gradient pt-24 pb-32 px-4 relative overflow-hidden">
         <div class="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-bl from-indigo-100/50 to-transparent rounded-bl-full -z-10"></div>
         <div class="max-w-7xl mx-auto text-center relative z-10">
-            <span class="inline-block py-1 px-3 rounded-full bg-indigo-100 text-indigo-700 text-xs font-bold tracking-wider uppercase mb-6">Образование будущего</span>
+            <span class="inline-block py-1 px-3 rounded-full bg-indigo-100 text-indigo-700 text-xs font-bold tracking-wider uppercase mb-6">{{ T .Lang "hero.badge" }}</span>
             <h1 class="text-5xl md:text-7xl font-bold text-slate-900 mb-8 leading-tight">
-                Раскройте свой <br><span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">потенциал</span> сегодня
+                {{ T .Lang "hero.title_1" }} <br><span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">{{ T .Lang "hero.title_2" }}</span>
             </h1>
             <p class="text-lg md:text-xl text-slate-600 mb-10 max-w-2xl mx-auto leading-relaxed">
-                Доступ к лучшим курсам от экспертов индустрии. Учитесь в своем темпе, получайте навыки и меняйте свою карьеру.
+                {{ T .Lang "hero.subtitle" }}
             </p>
 
             <div class="flex flex-col sm:flex-row justify-center gap-4">
                 {{if .IsAuthenticated}}
                 <a href="/personal" class="px-8 py-4 bg-slate-900 text-white rounded-full font-semibold shadow-lg hover:bg-slate-800 transition transform hover:scale-105">
-                    Личный кабинет
+                    {{ T .Lang "hero.cta_personal" }}
                 </a>
                 {{else}}
                 <a href="/auth/google/login" class="px-8 py-4 bg-indigo-600 text-white rounded-full font-semibold shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition transform hover:scale-105 flex items-center justify-center">
-                    <i class="fab fa-google mr-2"></i> Начать бесплатно
+                    <i class="fab fa-google mr-2"></i> {{ T .Lang "hero.cta_start" }}
                 </a>
                 {{end}}
                 <a href="#courses" class="px-8 py-4 bg-white text-slate-700 border border-slate-200 rounded-full font-semibold hover:bg-slate-50 transition">
-                    Выбрать курс
+                    {{ T .Lang "hero.cta_browse" }}
                 </a>
             </div>
         </div>
     </section>
 
-    <!-- OPEN COURSES SECTION -->
+    <!-- OPEN COURSES -->
     <section id="open-courses-section" class="py-20 bg-gradient-to-br from-green-50 to-emerald-50 hidden">
         <div class="max-w-7xl mx-auto px-4">
             <div class="text-center mb-12">
-                <span class="inline-block py-1 px-3 rounded-full bg-green-100 text-green-700 text-xs font-bold tracking-wider uppercase mb-4">Бесплатный доступ</span>
-                <h2 class="text-4xl font-bold text-slate-900 mb-4">Открытые курсы</h2>
-                <p class="text-slate-500">Изучайте без регистрации — доступно всем прямо сейчас</p>
+                <span class="inline-block py-1 px-3 rounded-full bg-green-100 text-green-700 text-xs font-bold tracking-wider uppercase mb-4">{{ T .Lang "open_courses.badge" }}</span>
+                <h2 class="text-4xl font-bold text-slate-900 mb-4">{{ T .Lang "open_courses.title" }}</h2>
+                <p class="text-slate-500">{{ T .Lang "open_courses.subtitle" }}</p>
             </div>
             <div id="open-courses-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"></div>
         </div>
     </section>
 
-    <!-- COURSES SECTION -->
+    <!-- COURSES -->
     <section id="courses" class="py-24 bg-white">
         <div class="max-w-7xl mx-auto px-4">
             <div class="text-center mb-16">
-                <h2 class="text-4xl font-bold text-slate-900 mb-4">Популярные курсы</h2>
-                <p class="text-slate-500">Выберите направление и начните обучение прямо сейчас</p>
+                <h2 class="text-4xl font-bold text-slate-900 mb-4">{{ T .Lang "courses.title" }}</h2>
+                <p class="text-slate-500">{{ T .Lang "courses.subtitle" }}</p>
             </div>
 
             <div id="courses-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 <div class="col-span-full text-center text-slate-400 py-10">
-                    <i class="fas fa-circle-notch fa-spin text-2xl"></i> Загрузка курсов...
+                    <i class="fas fa-circle-notch fa-spin text-2xl"></i> {{ T .Lang "courses.loading" }}
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- REVIEWS SECTION -->
+    <!-- REVIEWS -->
     <section id="reviews-section" class="py-24 bg-slate-50 hidden">
         <div class="max-w-7xl mx-auto px-4">
             <div class="text-center mb-16">
-                <h2 class="text-4xl font-bold text-slate-900 mb-4">Что говорят студенты</h2>
-                <p class="text-slate-500">Реальные отзывы от тех, кто уже прошел обучение</p>
+                <h2 class="text-4xl font-bold text-slate-900 mb-4">{{ T .Lang "reviews.title" }}</h2>
+                <p class="text-slate-500">{{ T .Lang "reviews.subtitle" }}</p>
             </div>
-
-            <div id="reviews-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <!-- Отзывы будут загружены сюда через JS -->
-            </div>
+            <div id="reviews-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
         </div>
     </section>
 
-    <!-- FEATURES SECTION -->
+    <!-- FEATURES -->
     <section class="py-24 bg-white">
         <div class="max-w-7xl mx-auto px-4">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-12 text-center">
@@ -103,53 +102,52 @@
                     <div class="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-6">
                         <i class="fas fa-laptop-code"></i>
                     </div>
-                    <h3 class="text-xl font-bold text-slate-900 mb-3">Практические задания</h3>
-                    <p class="text-slate-500">Решайте реальные задачи и пишите код прямо в браузере.</p>
+                    <h3 class="text-xl font-bold text-slate-900 mb-3">{{ T .Lang "features.practical_title" }}</h3>
+                    <p class="text-slate-500">{{ T .Lang "features.practical_desc" }}</p>
                 </div>
                 <div>
                     <div class="w-16 h-16 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-6">
                         <i class="fas fa-certificate"></i>
                     </div>
-                    <h3 class="text-xl font-bold text-slate-900 mb-3">Сертификация</h3>
-                    <p class="text-slate-500">Получите подтверждение своих навыков после успешного завершения.</p>
+                    <h3 class="text-xl font-bold text-slate-900 mb-3">{{ T .Lang "features.cert_title" }}</h3>
+                    <p class="text-slate-500">{{ T .Lang "features.cert_desc" }}</p>
                 </div>
                 <div>
                     <div class="w-16 h-16 bg-green-50 text-green-600 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-6">
                         <i class="fas fa-users"></i>
                     </div>
-                    <h3 class="text-xl font-bold text-slate-900 mb-3">Сообщество</h3>
-                    <p class="text-slate-500">Общайтесь с единомышленниками и получайте поддержку менторов.</p>
+                    <h3 class="text-xl font-bold text-slate-900 mb-3">{{ T .Lang "features.community_title" }}</h3>
+                    <p class="text-slate-500">{{ T .Lang "features.community_desc" }}</p>
                 </div>
             </div>
         </div>
     </section>
-
 </main>
 
 {{template "footer" .}}
 
-<!-- MODAL -->
+<!-- COURSE MODAL -->
 <div id="course-modal-overlay" onclick="closeModal()" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 opacity-0 pointer-events-none transition-opacity duration-300"></div>
-<div id="course-modal-panel" class="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl shadow-2xl transform translate-y-full transition-transform duration-500 cubic-bezier(0.32, 0.72, 0, 1) max-h-[90vh] flex flex-col">
+<div id="course-modal-panel" class="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl shadow-2xl transform translate-y-full transition-transform duration-500 max-h-[90vh] flex flex-col">
     <div class="pt-4 pb-2 flex justify-center cursor-pointer flex-shrink-0" onclick="closeModal()">
         <div class="w-12 h-1.5 bg-slate-200 rounded-full"></div>
     </div>
     <div class="p-6 md:p-8 overflow-y-auto modal-scroll">
         <div class="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12">
             <div class="flex flex-col">
-                <p class="text-xs font-bold text-indigo-600 uppercase tracking-widest mb-2">Обзор курса</p>
-                <h2 id="modal-title" class="text-3xl md:text-4xl font-bold text-slate-900 mb-4 leading-tight">Загрузка...</h2>
+                <p class="text-xs font-bold text-indigo-600 uppercase tracking-widest mb-2" id="modal-overview-label"></p>
+                <h2 id="modal-title" class="text-3xl md:text-4xl font-bold text-slate-900 mb-4 leading-tight"></h2>
                 <div class="flex items-center gap-3 mb-6">
                     <img id="modal-author-img" src="" class="w-10 h-10 rounded-full object-cover border border-slate-100">
                     <div>
-                        <p class="text-xs text-slate-400 uppercase font-bold">Автор</p>
+                        <p class="text-xs text-slate-400 uppercase font-bold" id="modal-author-label"></p>
                         <p id="modal-author-name" class="font-medium text-slate-900">...</p>
                     </div>
                 </div>
-                <p id="modal-desc" class="text-slate-600 leading-relaxed mb-8">Описание загружается...</p>
+                <p id="modal-desc" class="text-slate-600 leading-relaxed mb-8"></p>
                 <hr class="border-slate-100 mb-8">
                 <div>
-                    <h3 class="font-bold text-slate-900 mb-6 text-xl">Программа</h3>
+                    <h3 class="font-bold text-slate-900 mb-6 text-xl" id="modal-syllabus-title"></h3>
                     <div id="modal-loader" class="flex justify-center py-6 hidden">
                         <svg class="animate-spin h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                     </div>
@@ -158,16 +156,42 @@
             </div>
             <div class="md:sticky md:top-8 h-fit">
                 <div class="bg-slate-50 rounded-3xl p-8 border border-slate-100">
-                    <h3 class="text-xl font-bold text-slate-900 mb-6">Начать обучение</h3>
+                    <h3 class="text-xl font-bold text-slate-900 mb-6" id="modal-start-title"></h3>
                     <div id="modal-action-area" class="space-y-4"></div>
-                    <p class="text-xs text-center text-slate-400 mt-4">Доступ навсегда • Сертификат</p>
+                    <p class="text-xs text-center text-slate-400 mt-4" id="modal-access-note"></p>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
+<!-- LANGUAGE DETECTION MODAL -->
+<div id="lang-detect-overlay" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-sm w-full text-center">
+        <div class="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-5">
+            <i class="fas fa-globe"></i>
+        </div>
+        <h2 class="text-xl font-bold text-slate-900 mb-2" id="lang-modal-title"></h2>
+        <p class="text-sm text-slate-500 mb-6" id="lang-modal-subtitle"></p>
+        <div class="space-y-3">
+            <button onclick="chooseLang('ru')" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-slate-200 hover:border-indigo-500 hover:bg-indigo-50 transition text-sm font-medium text-slate-700">
+                <span class="text-xl">🇷🇺</span> Русский
+            </button>
+            <button onclick="chooseLang('en')" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-slate-200 hover:border-indigo-500 hover:bg-indigo-50 transition text-sm font-medium text-slate-700">
+                <span class="text-xl">🇬🇧</span> English
+            </button>
+            <button onclick="chooseLang('ky')" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-slate-200 hover:border-indigo-500 hover:bg-indigo-50 transition text-sm font-medium text-slate-700">
+                <span class="text-xl">🇰🇬</span> Кыргызча
+            </button>
+        </div>
+        <button onclick="dismissLangModal()" class="mt-4 text-xs text-slate-400 hover:text-slate-600 transition">
+            {{ T .Lang "lang.save" }}
+        </button>
+    </div>
+</div>
+
 <script>
+    const SITE_LANG = '{{.Lang}}';
     const overlay = document.getElementById('course-modal-overlay');
     const panel = document.getElementById('course-modal-panel');
     const mLoader = document.getElementById('modal-loader');
@@ -182,142 +206,153 @@
         "from-sky-400 to-cyan-500",
     ];
 
-    document.addEventListener('DOMContentLoaded', loadHomeData);
+    // Initialise modal labels from translations
+    document.getElementById('modal-overview-label').textContent = t('modal.overview');
+    document.getElementById('modal-author-label').textContent = t('modal.author');
+    document.getElementById('modal-syllabus-title').textContent = t('modal.syllabus');
+    document.getElementById('modal-start-title').textContent = t('modal.start_learning');
+    document.getElementById('modal-access-note').textContent = t('modal.access_forever');
+    document.getElementById('lang-modal-title').textContent = t('lang.modal_title');
+    document.getElementById('lang-modal-subtitle').textContent = t('lang.modal_subtitle');
 
+    document.addEventListener('DOMContentLoaded', function() {
+        loadHomeData();
+        checkLanguagePreference();
+    });
+
+    // ─── Language detection ────────────────────────────────────────────────
+    function checkLanguagePreference() {
+        if (localStorage.getItem('lang_chosen')) return;
+
+        const browserLang = (navigator.language || navigator.userLanguage || 'ru')
+            .toLowerCase().split('-')[0];
+        const supported = { ru: true, en: true, ky: true };
+        const detected = supported[browserLang] ? browserLang : null;
+
+        if (detected && detected !== SITE_LANG) {
+            document.getElementById('lang-detect-overlay').classList.remove('hidden');
+        }
+    }
+
+    async function chooseLang(lang) {
+        localStorage.setItem('lang_chosen', '1');
+        await fetch('/api/language', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ lang })
+        });
+        location.reload();
+    }
+
+    function dismissLangModal() {
+        localStorage.setItem('lang_chosen', '1');
+        document.getElementById('lang-detect-overlay').classList.add('hidden');
+    }
+
+    // ─── Home data ─────────────────────────────────────────────────────────
     async function loadHomeData() {
-        console.log("Loading home data...");
         try {
             const response = await fetch('/api/home');
-            if (!response.ok) throw new Error('Ошибка загрузки данных: ' + response.status);
+            if (!response.ok) throw new Error('HTTP ' + response.status);
             const data = await response.json();
-            console.log("Data loaded:", data);
-
             renderCourses(data.courses);
             renderOpenCourses(data.open_courses);
             renderReviews(data.reviews);
-
         } catch (error) {
             console.error("Error loading home data:", error);
-            document.getElementById('courses-grid').innerHTML = '<div class="col-span-full text-center text-red-500 py-10">Не удалось загрузить курсы.</div>';
+            document.getElementById('courses-grid').innerHTML =
+                `<div class="col-span-full text-center text-red-500 py-10">${t('courses.load_error')}</div>`;
         }
     }
 
     function renderCourses(courses) {
         const container = document.getElementById('courses-grid');
         container.innerHTML = '';
-
         if (!courses || courses.length === 0) {
-            container.innerHTML = '<div class="col-span-full text-center text-slate-400 py-10">Курсов пока нет.</div>';
+            container.innerHTML = `<div class="col-span-full text-center text-slate-400 py-10">${t('courses.empty')}</div>`;
             return;
         }
-
         courses.forEach((course, index) => {
             const colorClass = colorPool[index % colorPool.length];
-            const authorName = course.author ? course.author.Name : "Неизвестный автор";
+            const authorName = course.author ? course.author.Name : t('courses.unknown_author');
             const authorImg = course.author ? course.author.Picture : "";
-            const langBadge = course.language ? `<span class="bg-slate-100 text-slate-500 text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">${course.language}</span>` : '';
+            const langBadge = course.language
+                ? `<span class="bg-slate-100 text-slate-500 text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">${course.language}</span>`
+                : '';
+            const coverHtml = course.image_url
+                ? `<img src="${course.image_url}" class="w-full h-full object-cover opacity-90 group-hover:scale-105 transition-transform duration-500">`
+                : `<span class="text-white/40 text-6xl font-serif font-bold opacity-50 select-none">${course.title.charAt(0)}</span>`;
 
-            let coverHtml = '';
-            if (course.image_url) {
-                coverHtml = `<img src="${course.image_url}" class="w-full h-full object-cover opacity-90 group-hover:scale-105 transition-transform duration-500">`;
-            } else {
-                coverHtml = `<span class="text-white/40 text-6xl font-serif font-bold opacity-50 select-none">${course.title.charAt(0)}</span>`;
-            }
-
-            const html = `
+            container.insertAdjacentHTML('beforeend', `
                 <div onclick="openModal(this)"
                      class="group bg-white rounded-2xl overflow-hidden border border-slate-100 shadow-sm card-hover transition-all duration-300 cursor-pointer flex flex-col h-full"
-                     data-id="${course.id}"
-                     data-title="${course.title}"
-                     data-author="${authorName}"
-                     data-author-img="${authorImg}">
-
+                     data-id="${course.id}" data-title="${escapeAttr(course.title)}"
+                     data-author="${escapeAttr(authorName)}" data-author-img="${escapeAttr(authorImg)}">
                     <div class="relative h-56 bg-gradient-to-br ${colorClass} flex items-center justify-center overflow-hidden">
                         ${coverHtml}
                         <div class="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors"></div>
                     </div>
-
                     <div class="p-6 flex flex-col flex-grow">
                         <div class="flex items-center gap-2 mb-3">
-                            <span class="bg-indigo-50 text-indigo-600 text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">Курс</span>
+                            <span class="bg-indigo-50 text-indigo-600 text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">${t('courses.label')}</span>
                             ${langBadge}
                         </div>
-                        <h3 class="text-xl font-bold text-slate-900 mb-3 leading-snug group-hover:text-indigo-600 transition-colors">
-                            ${course.title}
-                        </h3>
-
+                        <h3 class="text-xl font-bold text-slate-900 mb-3 leading-snug group-hover:text-indigo-600 transition-colors">${escapeHtml(course.title)}</h3>
                         <div class="mt-auto pt-4 border-t border-slate-50 flex items-center justify-between">
                             <div class="flex items-center gap-3">
-                                <img src="${authorImg}" class="w-8 h-8 rounded-full object-cover border border-white shadow-sm" onerror="this.style.display='none'">
-                                <span class="text-sm font-medium text-slate-600">${authorName}</span>
+                                <img src="${escapeAttr(authorImg)}" class="w-8 h-8 rounded-full object-cover border border-white shadow-sm" onerror="this.style.display='none'">
+                                <span class="text-sm font-medium text-slate-600">${escapeHtml(authorName)}</span>
                             </div>
                             <div class="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
                                 <i class="fas fa-arrow-right text-xs"></i>
                             </div>
                         </div>
                     </div>
-                </div>
-            `;
-            container.insertAdjacentHTML('beforeend', html);
+                </div>`);
         });
     }
 
     function renderOpenCourses(courses) {
         const section = document.getElementById('open-courses-section');
         const container = document.getElementById('open-courses-grid');
-
-        if (!courses || courses.length === 0) {
-            section.classList.add('hidden');
-            return;
-        }
+        if (!courses || courses.length === 0) { section.classList.add('hidden'); return; }
 
         section.classList.remove('hidden');
         container.innerHTML = '';
 
         courses.forEach((course, index) => {
             const colorClass = colorPool[index % colorPool.length];
-            const authorName = course.author ? course.author.Name : "Неизвестный автор";
+            const authorName = course.author ? course.author.Name : t('courses.unknown_author');
             const authorImg = course.author ? course.author.Picture : "";
-            const totalLessons = (course.modules || []).reduce((sum, m) => sum + (m.lessons || []).length, 0);
+            const totalLessons = (course.modules || []).reduce((s, m) => s + (m.lessons || []).length, 0);
+            const coverHtml = course.image_url
+                ? `<img src="${course.image_url}" class="w-full h-full object-cover opacity-90 group-hover:scale-105 transition-transform duration-500">`
+                : `<span class="text-white/40 text-6xl font-serif font-bold opacity-50 select-none">${course.title.charAt(0)}</span>`;
 
-            let coverHtml = '';
-            if (course.image_url) {
-                coverHtml = `<img src="${course.image_url}" class="w-full h-full object-cover opacity-90 group-hover:scale-105 transition-transform duration-500">`;
-            } else {
-                coverHtml = `<span class="text-white/40 text-6xl font-serif font-bold opacity-50 select-none">${course.title.charAt(0)}</span>`;
-            }
-
-            const html = `
+            container.insertAdjacentHTML('beforeend', `
                 <div onclick="openModal(this)"
                      class="group bg-white rounded-2xl overflow-hidden border-2 border-green-100 shadow-sm card-hover transition-all duration-300 cursor-pointer flex flex-col h-full"
-                     data-id="${course.id}"
-                     data-title="${course.title}"
-                     data-author="${authorName}"
-                     data-author-img="${authorImg}">
-
+                     data-id="${course.id}" data-title="${escapeAttr(course.title)}"
+                     data-author="${escapeAttr(authorName)}" data-author-img="${escapeAttr(authorImg)}">
                     <div class="relative h-48 bg-gradient-to-br ${colorClass} flex items-center justify-center overflow-hidden">
                         ${coverHtml}
                         <div class="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors"></div>
-                        <span class="absolute top-3 right-3 bg-green-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow">ОТКРЫТЫЙ</span>
+                        <span class="absolute top-3 right-3 bg-green-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow">${t('courses.open_badge')}</span>
                     </div>
-
                     <div class="p-6 flex flex-col flex-grow">
-                        <h3 class="text-lg font-bold text-slate-900 mb-2 leading-snug group-hover:text-green-600 transition-colors">${course.title}</h3>
-                        <p class="text-xs text-slate-400 mb-4">${totalLessons} уроков · Без регистрации</p>
-
+                        <h3 class="text-lg font-bold text-slate-900 mb-2 leading-snug group-hover:text-green-600 transition-colors">${escapeHtml(course.title)}</h3>
+                        <p class="text-xs text-slate-400 mb-4">${totalLessons} ${t('courses.lessons_suffix')} · ${t('courses.without_reg')}</p>
                         <div class="mt-auto pt-4 border-t border-slate-50 flex items-center justify-between">
                             <div class="flex items-center gap-2">
-                                <img src="${authorImg}" class="w-7 h-7 rounded-full object-cover border border-white shadow-sm" onerror="this.style.display='none'">
-                                <span class="text-sm font-medium text-slate-600">${authorName}</span>
+                                <img src="${escapeAttr(authorImg)}" class="w-7 h-7 rounded-full object-cover border border-white shadow-sm" onerror="this.style.display='none'">
+                                <span class="text-sm font-medium text-slate-600">${escapeHtml(authorName)}</span>
                             </div>
                             <span class="text-xs text-green-600 font-semibold flex items-center gap-1">
-                                <i class="fas fa-lock-open text-[10px]"></i> Открыть
+                                <i class="fas fa-lock-open text-[10px]"></i> ${t('courses.open_link')}
                             </span>
                         </div>
                     </div>
-                </div>
-            `;
-            container.insertAdjacentHTML('beforeend', html);
+                </div>`);
         });
     }
 
@@ -325,36 +360,28 @@
         const section = document.getElementById('reviews-section');
         const container = document.getElementById('reviews-grid');
         container.innerHTML = '';
-
-        if (!reviews || reviews.length === 0) {
-            section.classList.add('hidden');
-            return;
-        }
+        if (!reviews || reviews.length === 0) { section.classList.add('hidden'); return; }
 
         section.classList.remove('hidden');
-
         reviews.forEach(review => {
-            const stars = '<i class="fas fa-star"></i>'.repeat(review.rating) + '<i class="far fa-star text-gray-300"></i>'.repeat(5 - review.rating);
-
-            const html = `
+            const stars = '<i class="fas fa-star"></i>'.repeat(review.rating) +
+                          '<i class="far fa-star text-gray-300"></i>'.repeat(5 - review.rating);
+            container.insertAdjacentHTML('beforeend', `
                 <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
-                    <div class="flex text-yellow-400 text-sm mb-4">
-                        ${stars}
-                    </div>
+                    <div class="flex text-yellow-400 text-sm mb-4">${stars}</div>
                     <p class="text-slate-700 mb-6 leading-relaxed">"${escapeHtml(review.content)}"</p>
                     <div class="flex items-center gap-4 border-t border-slate-50 pt-4">
-                        <img src="${review.user.Picture}" class="w-10 h-10 rounded-full object-cover" onerror="this.src='https://via.placeholder.com/40'">
+                        <img src="${review.user.Picture}" class="w-10 h-10 rounded-full object-cover" onerror="this.src=''">
                         <div>
-                            <p class="text-sm font-bold text-slate-900">${review.user.Name}</p>
-                            <p class="text-xs text-slate-400">Курс: ${review.course.title}</p>
+                            <p class="text-sm font-bold text-slate-900">${escapeHtml(review.user.Name)}</p>
+                            <p class="text-xs text-slate-400">${t('reviews.course_prefix')} ${escapeHtml(review.course.title)}</p>
                         </div>
                     </div>
-                </div>
-            `;
-            container.insertAdjacentHTML('beforeend', html);
+                </div>`);
         });
     }
 
+    // ─── Course modal ──────────────────────────────────────────────────────
     function closeModal() {
         overlay.classList.remove('opacity-100', 'pointer-events-auto');
         overlay.classList.add('opacity-0', 'pointer-events-none');
@@ -373,7 +400,7 @@
         document.getElementById('modal-title').textContent = title;
         document.getElementById('modal-author-name').textContent = author;
         document.getElementById('modal-author-img').src = authorImg;
-        document.getElementById('modal-desc').textContent = "Загрузка...";
+        document.getElementById('modal-desc').textContent = t('modal.desc_loading');
         document.getElementById('modal-action-area').innerHTML = '';
 
         mLoader.classList.remove('hidden');
@@ -388,13 +415,13 @@
 
         try {
             const response = await fetch(`/api/courses/${id}/structure`);
-            if (!response.ok) throw new Error('Ошибка сети');
+            if (!response.ok) throw new Error('Network error');
             const data = await response.json();
             const course = data.course;
             const isAuth = data.is_auth;
             const reqStatus = data.request_status;
 
-            document.getElementById('modal-desc').textContent = course.description || "Описание отсутствует.";
+            document.getElementById('modal-desc').textContent = course.description || t('modal.no_desc');
 
             if (course.modules && course.modules.length > 0) {
                 let html = '';
@@ -402,21 +429,20 @@
                     html += `
                         <div class="relative pl-8 border-l border-slate-200 pb-6 last:pb-0 last:border-0">
                             <div class="absolute -left-1.5 top-1 w-3 h-3 bg-indigo-600 rounded-full ring-4 ring-white"></div>
-                            <h4 class="text-sm font-bold text-slate-900 mb-2 uppercase tracking-wide">Модуль ${modIndex + 1}: ${mod.title}</h4>
-                            <div class="space-y-2">
-                    `;
+                            <h4 class="text-sm font-bold text-slate-900 mb-2 uppercase tracking-wide">${t('modal.module')} ${modIndex + 1}: ${escapeHtml(mod.title)}</h4>
+                            <div class="space-y-2">`;
                     if (mod.lessons && mod.lessons.length > 0) {
                         mod.lessons.forEach(lesson => {
-                            html += `<div class="flex items-center text-slate-600 text-sm"><i class="far fa-file-alt mr-3 text-slate-400"></i>${lesson.title}</div>`;
+                            html += `<div class="flex items-center text-slate-600 text-sm"><i class="far fa-file-alt mr-3 text-slate-400"></i>${escapeHtml(lesson.title)}</div>`;
                         });
                     } else {
-                        html += `<div class="text-sm text-slate-400 italic">Нет уроков</div>`;
+                        html += `<div class="text-sm text-slate-400 italic">${t('modal.no_lessons')}</div>`;
                     }
                     html += `</div></div>`;
                 });
                 mSyllabus.innerHTML = html;
             } else {
-                mSyllabus.innerHTML = '<p class="text-slate-400 text-sm">Программа уточняется.</p>';
+                mSyllabus.innerHTML = `<p class="text-slate-400 text-sm">${t('modal.syllabus_tbd')}</p>`;
             }
 
             const actionArea = document.getElementById('modal-action-area');
@@ -424,29 +450,30 @@
             if (course.is_open) {
                 actionArea.innerHTML = `
                     <a href="/course/${course.id}/learn" class="w-full bg-green-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-green-700 transition-all flex justify-center items-center gap-2">
-                        <i class="fas fa-lock-open"></i> Начать без регистрации
+                        <i class="fas fa-lock-open"></i> ${t('modal.start_open')}
                     </a>
-                    <p class="text-xs text-center text-green-600 font-medium">Открытый курс — вход для всех</p>`;
+                    <p class="text-xs text-center text-green-600 font-medium">${t('modal.open_hint')}</p>`;
             } else if (!isAuth) {
                 actionArea.innerHTML = `
                     <a href="/auth/google/login" class="w-full bg-slate-900 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-black transition-all flex justify-center items-center">
-                        <i class="fab fa-google mr-2"></i> Войти для записи
+                        <i class="fab fa-google mr-2"></i> ${t('modal.login_to_enroll')}
                     </a>`;
             } else {
                 if (reqStatus === 'pending') {
-                    actionArea.innerHTML = `<button disabled class="w-full bg-yellow-100 text-yellow-700 font-bold py-4 rounded-xl cursor-not-allowed">Заявка на рассмотрении</button>`;
+                    actionArea.innerHTML = `<button disabled class="w-full bg-yellow-100 text-yellow-700 font-bold py-4 rounded-xl cursor-not-allowed">${t('modal.pending')}</button>`;
                 } else if (reqStatus === 'approved') {
-                    actionArea.innerHTML = `<a href="/course/${course.id}/learn" class="w-full bg-green-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-green-700 transition-all flex justify-center items-center">Перейти к обучению</a>`;
+                    actionArea.innerHTML = `<a href="/course/${course.id}/learn" class="w-full bg-green-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-green-700 transition-all flex justify-center items-center">${t('modal.go_to_course')}</a>`;
                 } else {
-                    actionArea.innerHTML = `<button onclick="submitEnrollment()" id="btn-submit" class="w-full bg-indigo-600 text-white font-bold py-4 rounded-xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 hover:-translate-y-0.5 transition-all">Подать заявку</button>`;
+                    actionArea.innerHTML = `<button onclick="submitEnrollment()" id="btn-submit" class="w-full bg-indigo-600 text-white font-bold py-4 rounded-xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 hover:-translate-y-0.5 transition-all">${t('modal.apply')}</button>`;
                 }
             }
+
             mLoader.classList.add('hidden');
             mSyllabus.classList.remove('hidden');
         } catch (error) {
             console.error(error);
             mLoader.classList.add('hidden');
-            mSyllabus.innerHTML = '<p class="text-red-500 text-sm">Не удалось загрузить данные.</p>';
+            mSyllabus.innerHTML = `<p class="text-red-500 text-sm">${t('modal.error')}</p>`;
             mSyllabus.classList.remove('hidden');
         }
     }
@@ -465,12 +492,12 @@
             });
             if (response.ok) {
                 btn.className = "w-full bg-green-100 text-green-700 font-bold py-4 rounded-xl";
-                btn.innerHTML = "Заявка отправлена!";
+                btn.innerHTML = t('modal.applied');
                 setTimeout(() => closeModal(), 1500);
             } else if (response.status === 401) {
                 window.location.href = "/auth/google/login";
             } else {
-                alert("Ошибка отправки.");
+                alert(t('modal.apply_error'));
                 btn.innerHTML = originalText;
                 btn.disabled = false;
             }
@@ -483,7 +510,11 @@
 
     function escapeHtml(t) {
         const m = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
-        return t.replace(/[&<>"']/g, s => m[s]);
+        return String(t).replace(/[&<>"']/g, s => m[s]);
+    }
+
+    function escapeAttr(s) {
+        return String(s).replace(/"/g, '&quot;');
     }
 </script>
 </body>

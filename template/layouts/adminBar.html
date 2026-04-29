@@ -12,37 +12,37 @@
                     {{$dashboardPath := "/admin/dashboard"}}
                     {{$dashboardClass := "text-slate-300 hover:bg-slate-800 hover:text-white"}}
                     {{if eq .CurrentPath $dashboardPath}}{{$dashboardClass = "bg-slate-800 text-white"}}{{end}}
-                    <a href="{{$dashboardPath}}" class="px-3 py-2 rounded-md text-xs font-medium transition {{$dashboardClass}}">Обзор</a>
+                    <a href="{{$dashboardPath}}" class="px-3 py-2 rounded-md text-xs font-medium transition {{$dashboardClass}}">{{ T .Lang "admin.overview_nav" }}</a>
 
                     {{$usersPath := "/admin/enrollments"}}
                     {{$usersClass := "text-slate-300 hover:bg-slate-800 hover:text-white"}}
                     {{if eq .CurrentPath $usersPath}}{{$usersClass = "bg-slate-800 text-white"}}{{end}}
-                    <a href="{{$usersPath}}" class="px-3 py-2 rounded-md text-xs font-medium transition {{$usersClass}}">Заявки</a>
+                    <a href="{{$usersPath}}" class="px-3 py-2 rounded-md text-xs font-medium transition {{$usersClass}}">{{ T .Lang "admin.applications" }}</a>
 
                     {{$createPath := "/admin/courses"}}
                     {{$createClass := "text-slate-300 hover:bg-slate-800 hover:text-white"}}
                     {{if eq .CurrentPath $createPath}}{{$createClass = "bg-slate-800 text-white"}}{{end}}
-                    <a href="{{$createPath}}" class="px-3 py-2 rounded-md text-xs font-medium transition {{$createClass}}">Курсы</a>
+                    <a href="{{$createPath}}" class="px-3 py-2 rounded-md text-xs font-medium transition {{$createClass}}">{{ T .Lang "nav.courses" }}</a>
 
                     {{$reportsPath := "/admin/reports"}}
                     {{$reportsClass := "text-slate-300 hover:bg-slate-800 hover:text-white"}}
                     {{if eq .CurrentPath $reportsPath}}{{$reportsClass = "bg-slate-800 text-white"}}{{end}}
-                    <a href="{{$reportsPath}}" class="px-3 py-2 rounded-md text-xs font-medium transition {{$reportsClass}}">Отчеты</a>
+                    <a href="{{$reportsPath}}" class="px-3 py-2 rounded-md text-xs font-medium transition {{$reportsClass}}">{{ T .Lang "admin.reports" }}</a>
                 </nav>
             </div>
 
             <div class="flex items-center gap-4">
                 <a href="/" class="text-xs font-medium text-slate-400 hover:text-white transition flex items-center gap-1">
-                    <i class="fas fa-external-link-alt"></i> Сайт
+                    <i class="fas fa-external-link-alt"></i> {{ T .Lang "admin.site" }}
                 </a>
                 <div class="relative">
                     <button onclick="toggleUserMenu()" class="flex items-center gap-2 focus:outline-none">
                         <img class="h-8 w-8 rounded-full border border-slate-600" src="{{.UserPictureURL}}" alt="">
                     </button>
                     <div id="user-menu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-1 text-slate-800 z-50">
-                        <div class="px-4 py-2 border-b border-slate-100 text-xs text-slate-500">Администратор</div>
-                        <a href="/profile" class="block px-4 py-2 text-sm hover:bg-slate-50">Профиль</a>
-                        <a href="/logout" class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50">Выйти</a>
+                        <div class="px-4 py-2 border-b border-slate-100 text-xs text-slate-500">{{ T .Lang "admin.administrator" }}</div>
+                        <a href="/personal" class="block px-4 py-2 text-sm hover:bg-slate-50">{{ T .Lang "nav.profile" }}</a>
+                        <a href="/logout" class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50">{{ T .Lang "nav.logout" }}</a>
                     </div>
                 </div>
             </div>

@@ -7,5 +7,6 @@ type User struct {
 	Name     string
 	Picture  string
 	RoleID   uint
-	Role     Role `gorm:"foreignKey:RoleID"`
+	Role     Role   `gorm:"foreignKey:RoleID"`
+	Language string `gorm:"size:5;default:'ru'"`
 }

@@ -11,26 +11,69 @@
                 </a>
                 <div class="hidden sm:ml-8 sm:flex sm:space-x-8">
                     <a href="/my-courses" class="border-transparent text-slate-500 hover:border-indigo-500 hover:text-indigo-600 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition">
-                        Мои курсы
+                        {{ T .Lang "nav.my_courses" }}
                     </a>
                     <a href="/personal" class="border-transparent text-slate-500 hover:border-indigo-500 hover:text-indigo-600 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition">
-                        Профиль
+                        {{ T .Lang "nav.profile" }}
                     </a>
                 </div>
             </div>
-            <div class="flex items-center">
+            <div class="flex items-center gap-3">
+                <!-- Language switcher -->
+                <div class="relative" id="lang-switcher-p">
+                    <button onclick="toggleLangMenuP()" class="flex items-center gap-1 text-sm font-medium text-slate-500 hover:text-indigo-600 transition px-2 py-1 rounded-lg hover:bg-slate-50">
+                        <i class="fas fa-globe text-xs"></i>
+                        <span class="uppercase font-bold">{{.Lang}}</span>
+                        <i class="fas fa-chevron-down text-[10px]"></i>
+                    </button>
+                    <div id="lang-menu-p" class="hidden absolute right-0 mt-1 w-36 bg-white rounded-xl shadow-lg border border-slate-100 py-1 z-50">
+                        <button onclick="setLangP('ru')" class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2 {{if eq .Lang "ru"}}font-bold text-indigo-600{{end}}">
+                            <span>🇷🇺</span> Русский
+                        </button>
+                        <button onclick="setLangP('en')" class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2 {{if eq .Lang "en"}}font-bold text-indigo-600{{end}}">
+                            <span>🇬🇧</span> English
+                        </button>
+                        <button onclick="setLangP('ky')" class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2 {{if eq .Lang "ky"}}font-bold text-indigo-600{{end}}">
+                            <span>🇰🇬</span> Кыргызча
+                        </button>
+                    </div>
+                </div>
+
                 <div class="relative ml-3">
                     <button type="button" class="flex items-center gap-2 focus:outline-none" onclick="toggleUserMenu()">
                         <span class="text-sm font-medium text-slate-700 hidden sm:block">{{.UserName}}</span>
                         <img class="h-8 w-8 rounded-full object-cover border border-slate-200" src="{{.UserPictureURL}}" alt="">
                     </button>
                     <div id="user-menu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-slate-100 py-1 ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
-                        <a href="/personal" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">Настройки</a>
-                        <a href="/logout" class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50">Выйти</a>
+                        <a href="/personal" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">{{ T .Lang "nav.settings" }}</a>
+                        <a href="/logout" class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50">{{ T .Lang "nav.logout" }}</a>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </header>
+
+<script>
+function toggleLangMenuP() {
+    document.getElementById('lang-menu-p').classList.toggle('hidden');
+}
+function toggleUserMenu() {
+    document.getElementById('user-menu').classList.toggle('hidden');
+}
+document.addEventListener('click', function(e) {
+    const sw = document.getElementById('lang-switcher-p');
+    if (sw && !sw.contains(e.target)) {
+        document.getElementById('lang-menu-p').classList.add('hidden');
+    }
+});
+async function setLangP(lang) {
+    await fetch('/api/language', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lang })
+    });
+    location.reload();
+}
+</script>
 {{end}}
