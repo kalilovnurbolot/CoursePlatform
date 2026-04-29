@@ -115,7 +115,7 @@ func main() {
 
 	// Comments & Reviews
 	r.HandleFunc("/api/lessons/{id}/comments", userMiddleware(h.AddCommentAPI)).Methods("POST")
-	r.HandleFunc("/api/lessons/{id}/comments", userMiddleware(h.GetCommentsAPI)).Methods("GET")
+	r.HandleFunc("/api/lessons/{id}/comments", h.GetCommentsAPI).Methods("GET")
 	r.HandleFunc("/api/courses/{id}/reviews", userMiddleware(h.AddReviewAPI)).Methods("POST")
 	r.HandleFunc("/api/courses/{id}/reviews", h.GetReviewsAPI).Methods("GET")
 
