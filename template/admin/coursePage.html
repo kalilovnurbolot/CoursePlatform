@@ -1,10 +1,10 @@
 {{define "adminCourse"}}
-<html lang="ru">
+<html lang="{{.Lang}}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Редактор Курса (Test Mode)</title>
+    <title>{{.Title}}</title>
     <meta name="csrf-token" content="test-token-123">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -42,6 +42,8 @@
         .content-block:hover .insert-trigger { opacity: 1; }
         .insert-trigger:hover { transform: translateX(-50%) scale(1.1); }
     </style>
+    <script>const I18N = {{.TransJSON}};</script>
+    <script>function t(k){return I18N[k]||k;}</script>
     <script>
         function toggleUserMenu() {
             const menu = document.getElementById('user-menu');
@@ -58,7 +60,7 @@
 
         <div class="order-2 lg:order-1 col-panel flex flex-col h-full">
             <div class="p-4 border-b bg-gray-50 flex justify-between items-center sticky top-0 z-10">
-                <h2 class="font-semibold text-gray-700">📚 Мои Курсы</h2>
+                <h2 class="font-semibold text-gray-700">📚 {{ T .Lang "admin.course_my_courses" }}</h2>
                 <button onclick="openCourseModal()" class="text-indigo-600 hover:text-indigo-800 bg-indigo-50 p-1.5 rounded hover:bg-indigo-100 transition shadow-sm">
                     <i class="fas fa-plus"></i>
                 </button>
@@ -74,42 +76,42 @@
             <div class="p-4 border-b bg-white flex flex-col gap-2 sticky top-0 z-20 shadow-sm">
                 <div class="flex justify-between items-start">
                     <div class="w-full mr-4">
-                        <label id="editor-label" class="text-xs text-gray-500 font-bold uppercase tracking-wider">Выберите курс или урок</label>
-                        <input type="text" id="lesson-title-input" disabled value="" class="w-full text-xl font-bold text-gray-800 border-none p-0 focus:ring-0 placeholder-gray-300 bg-transparent" placeholder="Название урока...">
+                        <label id="editor-label" class="text-xs text-gray-500 font-bold uppercase tracking-wider">{{ T .Lang "admin.course_select_hint" }}</label>
+                        <input type="text" id="lesson-title-input" disabled value="" class="w-full text-xl font-bold text-gray-800 border-none p-0 focus:ring-0 placeholder-gray-300 bg-transparent" placeholder="{{ T .Lang "admin.course_lesson_placeholder" }}">
                     </div>
                     <div class="flex gap-2">
                         <button id="reset-answers-btn" disabled onclick="resetLessonAnswers()" class="px-3 py-2 bg-rose-100 text-rose-700 hover:bg-rose-200 text-sm font-medium rounded shadow transition flex items-center gap-2 cursor-not-allowed" title="Сбросить ответы студентов для этого урока">
                             <i class="fas fa-eraser"></i>
                         </button>
                         <button id="save-content-btn" disabled class="px-4 py-2 bg-gray-300 text-white text-sm font-medium rounded shadow transition flex items-center gap-2 cursor-not-allowed">
-                            <i class="fas fa-save"></i> <span>Сохранить</span>
+                            <i class="fas fa-save"></i> <span>{{ T .Lang "admin.course_save" }}</span>
                         </button>
                     </div>
                 </div>
             </div>
 
             <div id="content-blocks-area" class="scrollable-content bg-gray-50/50 p-6 pb-20">
-                <div class="text-center text-gray-400 mt-20">
-                    <i class="fas fa-arrow-left"></i> Выберите курс слева, чтобы начать редактирование структуры.
+                <div class="text-center text-gray-400 mt-20" id="editor-empty-hint">
+                    <i class="fas fa-arrow-left"></i> {{ T .Lang "admin.course_select_hint" }}
                 </div>
             </div>
 
             <div class="p-4 border-t bg-gray-50 text-center sticky bottom-0 z-20">
                 <button id="add-block-btn" disabled onclick="openTypeModal(null)" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-400 bg-gray-100 cursor-not-allowed transition">
-                    <i class="fas fa-plus-circle mr-2"></i> Добавить блок в конец
+                    <i class="fas fa-plus-circle mr-2"></i> {{ T .Lang "admin.course_add_block_end" }}
                 </button>
             </div>
         </div>
 
         <div class="order-3 lg:order-3 col-panel">
             <div class="p-4 border-b bg-gray-50 flex justify-between items-center sticky top-0 z-10">
-                <h2 class="font-semibold text-gray-700">🔗 Структура</h2>
+                <h2 class="font-semibold text-gray-700">🔗 {{ T .Lang "admin.course_structure" }}</h2>
                 <button id="add-module-btn" disabled title="Добавить модуль" class="text-gray-400 bg-gray-100 p-1.5 rounded cursor-not-allowed">
                     <i class="fas fa-folder-plus"></i>
                 </button>
             </div>
             <div id="structure-container" class="scrollable-content">
-                <div class="text-sm text-gray-400 text-center mt-10">Выберите курс</div>
+                <div class="text-sm text-gray-400 text-center mt-10">{{ T .Lang "admin.course_select_course" }}</div>
             </div>
         </div>
     </div>
@@ -118,19 +120,19 @@
 <div id="type-modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden z-50 flex items-center justify-center backdrop-blur-sm">
     <div class="bg-white rounded-lg shadow-xl w-full max-w-lg p-6 transform transition-all scale-100">
         <div class="flex justify-between items-center mb-6">
-            <h3 class="text-lg font-bold text-gray-900">Добавить блок</h3>
+            <h3 class="text-lg font-bold text-gray-900">{{ T .Lang "admin.course_add_block_title" }}</h3>
             <button onclick="closeTypeModal()" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times text-xl"></i></button>
         </div>
 
         <div class="grid grid-cols-3 gap-4">
             <button onclick="addBlock('text')" class="flex flex-col items-center justify-center p-4 border rounded-xl hover:border-indigo-500 hover:bg-indigo-50 hover:shadow-md transition group">
                 <i class="fas fa-align-left text-3xl text-gray-400 group-hover:text-indigo-600 mb-2"></i>
-                <span class="text-sm font-medium text-gray-700">Текст</span>
+                <span class="text-sm font-medium text-gray-700">{{ T .Lang "admin.course_block_text" }}</span>
             </button>
 
             <button onclick="addBlock('code')" class="flex flex-col items-center justify-center p-4 border rounded-xl hover:border-indigo-500 hover:bg-indigo-50 hover:shadow-md transition group">
                 <i class="fas fa-code text-3xl text-gray-400 group-hover:text-indigo-600 mb-2"></i>
-                <span class="text-sm font-medium text-gray-700">Код</span>
+                <span class="text-sm font-medium text-gray-700">{{ T .Lang "admin.course_block_code" }}</span>
             </button>
 
             <button onclick="addBlock('video')" class="flex flex-col items-center justify-center p-4 border rounded-xl hover:border-indigo-500 hover:bg-indigo-50 hover:shadow-md transition group">
@@ -140,21 +142,21 @@
 
             <button onclick="addBlock('quiz')" class="flex flex-col items-center justify-center p-4 border rounded-xl hover:border-indigo-500 hover:bg-indigo-50 hover:shadow-md transition group">
                 <i class="fas fa-list-check text-3xl text-gray-400 group-hover:text-indigo-600 mb-2"></i>
-                <span class="text-sm font-medium text-gray-700">Тест</span>
+                <span class="text-sm font-medium text-gray-700">{{ T .Lang "admin.course_block_quiz" }}</span>
             </button>
 
             <button onclick="addBlock('vocabulary')" class="flex flex-col items-center justify-center p-4 border rounded-xl hover:border-indigo-500 hover:bg-indigo-50 hover:shadow-md transition group">
                 <i class="fas fa-language text-3xl text-gray-400 group-hover:text-green-600 mb-2"></i>
-                <span class="text-sm font-medium text-gray-700">Словарь</span>
+                <span class="text-sm font-medium text-gray-700">{{ T .Lang "admin.course_block_vocab" }}</span>
             </button>
 
             <button id="btn-add-audio" onclick="addBlock('audio_dictation')" class="flex flex-col items-center justify-center p-4 border rounded-xl hover:border-indigo-500 hover:bg-indigo-50 hover:shadow-md transition group disabled:opacity-50 disabled:cursor-not-allowed">
                 <i class="fas fa-headphones text-3xl text-gray-400 group-hover:text-purple-600 mb-2"></i>
-                <span class="text-sm font-medium text-gray-700">Аудио-диктант</span>
+                <span class="text-sm font-medium text-gray-700">{{ T .Lang "admin.course_block_audio" }}</span>
             </button>
         </div>
         <div id="audio-warning" class="hidden text-xs text-red-500 text-center mt-2">
-            * Для этого блока нужно выбрать язык в настройках курса.
+            {{ T .Lang "admin.course_audio_warning" }}
         </div>
     </div>
 </div>
@@ -162,48 +164,49 @@
 <div id="course-modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden z-50 flex items-center justify-center backdrop-blur-sm">
     <div class="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
         <div class="flex justify-between items-center p-4 border-b">
-            <h3 id="modal-course-title" class="text-lg font-bold text-gray-900">Новый Курс</h3>
+            <h3 id="modal-course-title" class="text-lg font-bold text-gray-900">{{ T .Lang "admin.course_modal_new" }}</h3>
             <button onclick="closeCourseModal()" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button>
         </div>
         <form id="course-form" onsubmit="handleCourseSubmit(event)" class="p-6">
             <input type="hidden" id="course-id">
             <div class="mb-4">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Название курса</label>
+                <label class="block text-sm font-medium text-gray-700 mb-1">{{ T .Lang "admin.course_name_label" }}</label>
                 <input type="text" id="input-course-title" required class="w-full border-gray-300 rounded-md shadow-sm p-2 border focus:ring-indigo-500">
             </div>
 
             <div class="mb-4">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Язык курса (для озвучки)</label>
+                <label class="block text-sm font-medium text-gray-700 mb-1">{{ T .Lang "admin.course_lang_label" }}</label>
                 <select id="input-course-lang" class="w-full border-gray-300 rounded-md shadow-sm p-2 border focus:ring-indigo-500">
-                    <option value="">-- Не выбран --</option>
-                    <option value="en-US">Английский (US)</option>
-                    <option value="en-GB">Английский (UK)</option>
+                    <option value="">{{ T .Lang "admin.course_lang_none" }}</option>
+                    <option value="en-US">English (US)</option>
+                    <option value="en-GB">English (UK)</option>
                     <option value="ru-RU">Русский</option>
-                    <option value="de-DE">Немецкий</option>
-                    <option value="fr-FR">Французский</option>
-                    <option value="es-ES">Испанский</option>
+                    <option value="de-DE">Deutsch</option>
+                    <option value="fr-FR">Français</option>
+                    <option value="es-ES">Español</option>
+                    <option value="ky-KG">Кыргызча</option>
                 </select>
             </div>
 
             <div class="mb-4">
-                <label class="block text-sm font-medium text-gray-700 mb-1">URL Логотипа (опционально)</label>
+                <label class="block text-sm font-medium text-gray-700 mb-1">{{ T .Lang "admin.course_image_label" }}</label>
                 <input type="text" id="input-course-image" class="w-full border-gray-300 rounded-md shadow-sm p-2 border focus:ring-indigo-500" placeholder="https://...">
             </div>
 
             <div class="mb-3 flex items-center bg-gray-50 p-3 rounded-md border border-gray-100">
                 <input id="input-course-published" type="checkbox" class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
-                <label for="input-course-published" class="ml-2 block text-sm text-gray-900">Опубликовать курс</label>
+                <label for="input-course-published" class="ml-2 block text-sm text-gray-900">{{ T .Lang "admin.course_published_label" }}</label>
             </div>
             <div class="mb-6 flex items-center bg-green-50 p-3 rounded-md border border-green-100">
                 <input id="input-course-open" type="checkbox" class="h-4 w-4 text-green-600 border-gray-300 rounded">
                 <label for="input-course-open" class="ml-2 block text-sm text-gray-900">
-                    <span class="font-medium text-green-700">Открытый курс</span>
-                    <span class="block text-xs text-gray-500 mt-0.5">Весь контент доступен без авторизации и записи</span>
+                    <span class="font-medium text-green-700">{{ T .Lang "admin.course_open_label" }}</span>
+                    <span class="block text-xs text-gray-500 mt-0.5">{{ T .Lang "admin.course_open_desc" }}</span>
                 </label>
             </div>
             <div class="flex justify-end space-x-2">
-                <button type="button" onclick="closeCourseModal()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 text-sm">Отмена</button>
-                <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-sm font-medium shadow-sm">Сохранить</button>
+                <button type="button" onclick="closeCourseModal()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 text-sm">{{ T .Lang "admin.course_cancel" }}</button>
+                <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-sm font-medium shadow-sm">{{ T .Lang "admin.course_save" }}</button>
             </div>
         </form>
     </div>
@@ -271,11 +274,11 @@
             renderCoursesList(globalCourses);
 
         } catch (error) {
-            console.error('Ошибка загрузки курсов:', error);
+            console.error(error);
             container.innerHTML = `
                 <div class="text-red-500 text-center text-sm p-4">
                     <i class="fas fa-exclamation-circle mb-1"></i><br>
-                    Не удалось загрузить курсы.<br>
+                    ${t('admin.course_save_error')}<br>
                     <span class="text-xs text-gray-400">${error.message}</span>
                 </div>
             `;
@@ -288,18 +291,18 @@
         container.innerHTML = '';
 
         if (!courses || courses.length === 0) {
-            container.innerHTML = `<div class="text-gray-400 text-center text-sm py-4">Нет курсов.</div>`;
+            container.innerHTML = `<div class="text-gray-400 text-center text-sm py-4">${t('admin.course_no_courses')}</div>`;
             return;
         }
 
         courses.forEach(course => {
             const title = course.title || course.Title;
             const isPub = (course.is_published !== undefined) ? course.is_published : course.IsPublished;
-            const authorName = course.author?.Name || course.Author?.Name || 'Система';
+            const authorName = course.author?.Name || course.Author?.Name || t('admin.course_select_course');
             const cId = course.id || course.ID;
 
             const statusColor = isPub ? 'bg-indigo-500' : 'bg-gray-300';
-            const statusText = isPub ? 'Опубликован' : 'Черновик';
+            const statusText = isPub ? t('admin.course_published_badge') : t('admin.course_draft_badge');
 
             const item = document.createElement('div');
             item.id = `course-item-${cId}`;
@@ -355,7 +358,7 @@
 
         document.getElementById('lesson-title-input').value = "";
         document.getElementById('lesson-title-input').disabled = true;
-        document.getElementById('content-blocks-area').innerHTML = `<div class="text-center text-gray-400 mt-20">Выберите урок справа</div>`;
+        document.getElementById('content-blocks-area').innerHTML = `<div class="text-center text-gray-400 mt-20">${t('admin.course_select_lesson')}</div>`;
         document.getElementById('reset-answers-btn').disabled = true;
         document.getElementById('reset-answers-btn').classList.add('cursor-not-allowed');
 
@@ -367,7 +370,7 @@
             renderModules(courseData.modules || []);
         } catch (e) {
             console.error(e);
-            structContainer.innerHTML = '<div class="text-red-500 text-center text-xs">Ошибка загрузки</div>';
+            structContainer.innerHTML = `<div class="text-red-500 text-center text-xs">${t('admin.course_save_error_detail')} ${e.message}</div>`;
         }
     }
 
@@ -377,7 +380,7 @@
         container.innerHTML = '';
 
         if (!modules || modules.length === 0) {
-            container.innerHTML = `<div class="text-center text-sm text-gray-400 mt-4">Модулей нет.<br>Нажмите "+" для создания.</div>`;
+            container.innerHTML = `<div class="text-center text-sm text-gray-400 mt-4">${t('admin.course_no_modules')}</div>`;
             return;
         }
 
@@ -409,7 +412,7 @@
                     </li>`;
                 }).join('') + `</ul>`;
             } else {
-                lessonsHtml = `<div class="p-2 text-xs text-gray-400 italic pl-4">Нет уроков</div>`;
+                lessonsHtml = `<div class="p-2 text-xs text-gray-400 italic pl-4">${t('admin.course_no_lessons')}</div>`;
             }
 
             modDiv.innerHTML = `
@@ -428,7 +431,7 @@
     }
     async function createModule() {
         if (!currentCourseId) return;
-        const title = prompt("Введите название модуля:");
+        const title = prompt(t('admin.course_name_label') + ':');
         if (!title) return;
 
         try {
@@ -448,7 +451,7 @@
     }
 
     async function deleteModule(id) {
-        if (!confirm("Удалить модуль и ВСЕ его уроки?")) return;
+        if (!confirm(t('admin.course_confirm_delete_module'))) return;
         try {
             await apiCall(`/api/modules/${id}`, 'DELETE');
             refreshStructure();
@@ -456,7 +459,7 @@
     }
 
     async function createLesson(moduleId) {
-        const title = prompt("Название урока:");
+        const title = prompt(t('admin.course_lesson_placeholder'));
         if (!title) return;
 
         try {
@@ -466,7 +469,7 @@
     }
 
     async function deleteLesson(id) {
-        if (!confirm("Удалить урок?")) return;
+        if (!confirm(t('admin.course_confirm_delete_lesson'))) return;
         try {
             await apiCall(`/api/lessons/${id}`, 'DELETE');
             refreshStructure();
@@ -498,9 +501,9 @@
         const addBtn = document.getElementById('add-block-btn');
         const resetBtn = document.getElementById('reset-answers-btn');
 
-        area.innerHTML = '<div class="flex flex-col items-center justify-center h-64 text-gray-400 animate-pulse"><i class="fas fa-layer-group text-4xl mb-4"></i><p>Загрузка блоков...</p></div>';
+        area.innerHTML = `<div class="flex flex-col items-center justify-center h-64 text-gray-400 animate-pulse"><i class="fas fa-layer-group text-4xl mb-4"></i><p>${t('admin.course_loading_blocks')}</p></div>`;
 
-        titleInput.value = "Загрузка...";
+        titleInput.value = t('admin.course_saving');
         titleInput.disabled = true;
         saveBtn.disabled = true;
         addBtn.disabled = true;
@@ -524,7 +527,7 @@
                     addBlock(block.type, block.data, block.id);
                 });
             } else {
-                area.innerHTML = `<div class="text-center py-10 text-gray-300 border-2 border-dashed border-gray-200 rounded-lg">Урок пуст. Добавьте контент.</div>`;
+                area.innerHTML = `<div class="text-center py-10 text-gray-300 border-2 border-dashed border-gray-200 rounded-lg">${t('admin.course_lesson_empty')}</div>`;
             }
 
             saveBtn.disabled = false;
@@ -538,7 +541,7 @@
 
         } catch (e) {
             console.error(e);
-            area.innerHTML = `<div class="text-red-500 p-4 bg-red-50 rounded border border-red-100">Ошибка загрузки: ${e.message}</div>`;
+            area.innerHTML = `<div class="text-red-500 p-4 bg-red-50 rounded border border-red-100">${t('admin.course_save_error_detail')} ${e.message}</div>`;
         }
     }
 
@@ -549,7 +552,7 @@
         const saveBtn = document.getElementById('save-content-btn');
 
         const originalBtnHtml = saveBtn.innerHTML;
-        saveBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Сохранение...';
+        saveBtn.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i> ${t('admin.course_saving')}`;
         saveBtn.disabled = true;
         container.classList.add('opacity-70', 'pointer-events-none');
 
@@ -628,13 +631,13 @@
 
             await apiCall(`/api/lessons/${id}/content`, 'PUT', payload);
 
-            saveBtn.innerHTML = '<i class="fas fa-check"></i> Сохранено';
+            saveBtn.innerHTML = `<i class="fas fa-check"></i> ${t('admin.course_saved')}`;
             saveBtn.className = "px-4 py-2 bg-green-600 text-white text-sm font-medium rounded shadow transition flex items-center gap-2";
 
             updateSidebarTitle(id, titleInput.value);
 
             setTimeout(() => {
-                saveBtn.innerHTML = '<i class="fas fa-save"></i> Сохранить';
+                saveBtn.innerHTML = `<i class="fas fa-save"></i> ${t('admin.course_save')}`;
                 saveBtn.className = "px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded shadow transition flex items-center gap-2";
                 saveBtn.disabled = false;
             }, 1500);
@@ -645,18 +648,18 @@
             console.error(e);
 
             if (e.status === 409 && e.code === "BLOCK_HAS_ANSWERS") {
-                const confirmed = confirm("⚠️ ВНИМАНИЕ!\n\nВы пытаетесь изменить или удалить блоки, на которые студенты уже дали ответы.\n\nЕсли вы продолжите, прогресс студентов по этим вопросам будет СБРОШЕН (удален).\n\nВы уверены, что хотите продолжить?");
+                const confirmed = confirm(t('admin.course_confirm_reset_warning'));
                 if (confirmed) {
                     container.classList.remove('opacity-70', 'pointer-events-none');
                     saveBtn.disabled = false;
                     await saveLessonContent(id, true);
                     return;
                 } else {
-                    alert("Сохранение отменено. Страница будет обновлена.");
+                    alert(t('admin.course_save_cancelled'));
                     loadLesson(id, titleInput.value);
                 }
             } else {
-                alert("Ошибка сохранения: " + e.message);
+                alert(t('admin.course_save_error_detail') + ' ' + e.message);
             }
 
             saveBtn.innerHTML = originalBtnHtml;
@@ -668,7 +671,7 @@
 
     async function resetLessonAnswers() {
         if (!currentLessonId) return;
-        if (!confirm("Вы уверены, что хотите сбросить ВСЕ ответы студентов для этого урока? Это действие нельзя отменить.")) return;
+        if (!confirm(t('admin.course_confirm_reset_all'))) return;
         await saveLessonContent(currentLessonId, true);
     }
 
@@ -689,7 +692,7 @@
     function openCourseModal() {
         document.getElementById('course-form').reset();
         document.getElementById('course-id').value = '';
-        document.getElementById('modal-course-title').textContent = 'Создать Новый Курс';
+        document.getElementById('modal-course-title').textContent = t('admin.course_modal_new');
         document.getElementById('course-modal').classList.remove('hidden');
     }
     function openEditCourseModal(event, id) {
@@ -702,7 +705,7 @@
         document.getElementById('input-course-open').checked = course.is_open || false;
         document.getElementById('input-course-lang').value = course.language || "";
         document.getElementById('input-course-image').value = course.image_url || "";
-        document.getElementById('modal-course-title').textContent = 'Редактировать курс';
+        document.getElementById('modal-course-title').textContent = t('admin.course_modal_edit');
         document.getElementById('course-modal').classList.remove('hidden');
     }
     function closeCourseModal() { document.getElementById('course-modal').classList.add('hidden'); }
@@ -741,7 +744,7 @@
             });
 
             if (!response.ok) {
-                throw new Error('Ошибка сети или сервера');
+                throw new Error(t('common.network_error'));
             }
 
             const result = await response.json();
@@ -753,13 +756,13 @@
             }
 
         } catch (error) {
-            console.error('Ошибка:', error);
-            alert('Не удалось сохранить курс');
+            console.error(error);
+            alert(t('admin.course_save_error'));
         }
     }
     async function deleteCourse(event, id) {
         event.stopPropagation();
-        if (!confirm(`Вы действительно хотите удалить курс с ID: ${id}?`)) {
+        if (!confirm(`${t('admin.course_confirm_delete')} ${id}?`)) {
             return;
         }
         try {
@@ -767,15 +770,15 @@
                 method: 'DELETE',
             });
             if (response.ok) {
-                alert('✅ Курс успешно удален!');
+                alert('✅ ' + t('admin.course_deleted_ok'));
                 window.location.reload();
             } else {
                 const errorText = await response.text();
-                alert(`❌ Ошибка удаления: ${response.status} - ${errorText || 'Неизвестная ошибка'}`);
+                alert(`❌ ${t('admin.course_save_error_detail')} ${response.status} - ${errorText || t('common.network_error')}`);
             }
         } catch (error) {
-            console.error('Сетевая ошибка при удалении:', error);
-            alert('❌ Не удалось подключиться к серверу для удаления.');
+            console.error(error);
+            alert('❌ ' + t('common.network_error'));
         }
     }
 
@@ -819,51 +822,50 @@
         const valContent = data ? data.content || '' : '';
 
         if (type === 'text') {
-            icon = 'fa-align-left'; label = 'Текст';
-            innerHTML = `<textarea class="block-content w-full border border-gray-300 p-3 rounded text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none transition resize-y" rows="3" placeholder="Введите текст...">${valContent}</textarea>`;
+            icon = 'fa-align-left'; label = t('admin.course_block_text');
+            innerHTML = `<textarea class="block-content w-full border border-gray-300 p-3 rounded text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none transition resize-y" rows="3" placeholder="${t('admin.course_text_placeholder')}">${valContent}</textarea>`;
         } else if (type === 'code') {
-            icon = 'fa-code'; label = 'Код';
+            icon = 'fa-code'; label = t('admin.course_block_code');
             innerHTML = `<textarea class="block-content w-full bg-[#1e1e1e] text-[#d4d4d4] p-3 rounded text-sm font-mono focus:ring-2 focus:ring-indigo-500 focus:outline-none transition" rows="4" placeholder="// Code...">${valContent}</textarea>`;
         } else if (type === 'video') {
             icon = 'fa-video'; label = 'YouTube';
-            innerHTML = `<div class="flex items-center gap-2 border border-gray-300 p-2 rounded bg-white"><i class="fab fa-youtube text-red-500 text-lg"></i><input type="text" class="block-content w-full text-sm focus:outline-none" placeholder="Ссылка на видео" value="${valContent}"></div>`;
+            innerHTML = `<div class="flex items-center gap-2 border border-gray-300 p-2 rounded bg-white"><i class="fab fa-youtube text-red-500 text-lg"></i><input type="text" class="block-content w-full text-sm focus:outline-none" placeholder="${t('admin.course_video_placeholder')}" value="${valContent}"></div>`;
 
         } else if (type === 'quiz') {
-            icon = 'fa-list-check'; label = 'Тест (с вариантами)';
+            icon = 'fa-list-check'; label = t('admin.course_block_quiz');
             const question = data ? data.question || '' : '';
             innerHTML = `
                 <div class="quiz-container">
-                    <input type="text" class="quiz-question w-full border-b-2 border-indigo-100 p-2 text-sm font-bold mb-3 focus:border-indigo-500 focus:outline-none" placeholder="Введите вопрос..." value="${question}">
+                    <input type="text" class="quiz-question w-full border-b-2 border-indigo-100 p-2 text-sm font-bold mb-3 focus:border-indigo-500 focus:outline-none" placeholder="${t('admin.course_quiz_q_placeholder')}" value="${question}">
                     <div class="quiz-options pl-2 border-l-2 border-gray-100 space-y-2"></div>
                     <button type="button" onclick="addQuizOption(this)" class="mt-2 text-xs text-indigo-600 hover:text-indigo-800 font-medium flex items-center gap-1">
-                        <i class="fas fa-plus-circle"></i> Добавить вариант
+                        <i class="fas fa-plus-circle"></i> ${t('admin.course_quiz_add_option')}
                     </button>
                 </div>
             `;
         }
         else if (type === 'vocabulary') {
-            icon = 'fa-language'; label = 'Словарь (Новые слова)';
+            icon = 'fa-language'; label = t('admin.course_block_vocab');
             const title = data ? data.title || '' : '';
             innerHTML = `
                 <div class="vocab-container">
-                    <input type="text" class="vocab-title w-full border-b-2 border-green-100 p-2 text-sm font-bold mb-3 focus:border-green-500 focus:outline-none" placeholder="Заголовок списка (например: 'Слова к уроку')" value="${title}">
+                    <input type="text" class="vocab-title w-full border-b-2 border-green-100 p-2 text-sm font-bold mb-3 focus:border-green-500 focus:outline-none" placeholder="${t('admin.course_vocab_title_placeholder')}" value="${title}">
                     <div class="vocab-list space-y-2"></div>
                     <button type="button" onclick="addVocabularyItem(this)" class="mt-3 text-xs text-green-600 hover:text-green-800 font-medium flex items-center gap-1">
-                        <i class="fas fa-plus-circle"></i> Добавить слово
+                        <i class="fas fa-plus-circle"></i> ${t('admin.course_vocab_add_word')}
                     </button>
                 </div>
             `;
         }
-        // === НОВЫЙ ТИП: АУДИО-ДИКТАНТ ===
         else if (type === 'audio_dictation') {
-            icon = 'fa-headphones'; label = 'Аудио-диктант';
+            icon = 'fa-headphones'; label = t('admin.course_block_audio');
             const text = data ? data.text || '' : '';
             innerHTML = `
                 <div class="audio-container">
-                    <p class="text-xs text-gray-500 mb-2">Введите текст, который робот должен прочитать. Студент должен будет написать его на слух.</p>
-                    <textarea class="audio-text w-full border border-purple-200 bg-purple-50 p-3 rounded text-sm focus:ring-2 focus:ring-purple-500 focus:outline-none transition resize-y" rows="3" placeholder="Введите текст для диктанта...">${text}</textarea>
+                    <p class="text-xs text-gray-500 mb-2">${t('admin.course_audio_hint')}</p>
+                    <textarea class="audio-text w-full border border-purple-200 bg-purple-50 p-3 rounded text-sm focus:ring-2 focus:ring-purple-500 focus:outline-none transition resize-y" rows="3" placeholder="${t('admin.course_audio_text_placeholder')}">${text}</textarea>
                     <div class="mt-2 text-xs text-purple-600 flex items-center gap-1">
-                        <i class="fas fa-info-circle"></i> Язык озвучки: <b>${currentCourseLang}</b>
+                        <i class="fas fa-info-circle"></i> ${t('admin.course_audio_lang_prefix')} <b>${currentCourseLang}</b>
                     </div>
                 </div>
             `;
@@ -937,7 +939,7 @@
     }
 
     function removeBlock(btn) {
-        if(!confirm("Удалить этот блок?")) return;
+        if (!confirm(t('admin.course_confirm_delete_block'))) return;
         const block = btn.closest('.content-block');
         const container = document.getElementById('content-blocks-area');
         block.style.opacity = '0';
@@ -946,7 +948,7 @@
             block.remove();
             const remainingBlocks = container.querySelectorAll('.content-block');
             if (remainingBlocks.length === 0) {
-                container.innerHTML = `<div class="text-center py-10 text-gray-300 border-2 border-dashed border-gray-200 rounded-lg">Урок пуст. Добавьте контент.</div>`;
+                container.innerHTML = `<div class="text-center py-10 text-gray-300 border-2 border-dashed border-gray-200 rounded-lg">${t('admin.course_lesson_empty')}</div>`;
             }
         }, 200);
     }
@@ -957,9 +959,9 @@
         const div = document.createElement('div');
         div.className = "flex items-center gap-2 mb-2 option-row";
         div.innerHTML = `
-            <input type="radio" name="quiz_radio_${blockId}" class="quiz-correct-radio w-4 h-4 text-indigo-600 focus:ring-indigo-500 border-gray-300" ${isCorrect ? 'checked' : ''} title="Отметить как правильный">
-            <input type="text" class="quiz-option-text flex-1 border border-gray-300 p-2 rounded text-sm focus:outline-none focus:border-indigo-500 transition" placeholder="Вариант ответа" value="${value}">
-            <button type="button" onclick="this.closest('.option-row').remove()" class="text-gray-400 hover:text-red-500 p-1" title="Удалить вариант"><i class="fas fa-times"></i></button>
+            <input type="radio" name="quiz_radio_${blockId}" class="quiz-correct-radio w-4 h-4 text-indigo-600 focus:ring-indigo-500 border-gray-300" ${isCorrect ? 'checked' : ''}>
+            <input type="text" class="quiz-option-text flex-1 border border-gray-300 p-2 rounded text-sm focus:outline-none focus:border-indigo-500 transition" placeholder="${t('admin.course_quiz_opt_placeholder')}" value="${value}">
+            <button type="button" onclick="this.closest('.option-row').remove()" class="text-gray-400 hover:text-red-500 p-1"><i class="fas fa-times"></i></button>
         `;
         optionsContainer.appendChild(div);
     }
@@ -971,13 +973,13 @@
 
         div.innerHTML = `
             <div class="col-span-4">
-                <input type="text" class="vocab-term w-full border border-gray-300 p-1.5 rounded text-sm focus:outline-none focus:border-green-500" placeholder="Слово" value="${term}">
+                <input type="text" class="vocab-term w-full border border-gray-300 p-1.5 rounded text-sm focus:outline-none focus:border-green-500" placeholder="${t('admin.course_vocab_word_placeholder')}" value="${term}">
             </div>
             <div class="col-span-3">
-                <input type="text" class="vocab-trans w-full border border-gray-300 p-1.5 rounded text-sm focus:outline-none focus:border-green-500 font-mono text-gray-600" placeholder="[Транскр.]" value="${trans}">
+                <input type="text" class="vocab-trans w-full border border-gray-300 p-1.5 rounded text-sm focus:outline-none focus:border-green-500 font-mono text-gray-600" placeholder="${t('admin.course_vocab_trans_placeholder')}" value="${trans}">
             </div>
             <div class="col-span-4">
-                <input type="text" class="vocab-transl w-full border border-gray-300 p-1.5 rounded text-sm focus:outline-none focus:border-green-500" placeholder="Перевод" value="${transl}">
+                <input type="text" class="vocab-transl w-full border border-gray-300 p-1.5 rounded text-sm focus:outline-none focus:border-green-500" placeholder="${t('admin.course_vocab_transl_placeholder')}" value="${transl}">
             </div>
             <div class="col-span-1 text-center">
                 <button type="button" onclick="this.closest('.vocab-row').remove()" class="text-gray-400 hover:text-red-500 p-1"><i class="fas fa-times"></i></button>
