@@ -9,6 +9,7 @@
                     </div>
                     <span class="text-lg font-bold text-slate-900 hidden sm:block">Course<span class="text-indigo-600">Platform</span></span>
                 </a>
+                {{if .IsAuthenticated}}
                 <div class="hidden sm:ml-8 sm:flex sm:space-x-8">
                     <a href="/my-courses" class="border-transparent text-slate-500 hover:border-indigo-500 hover:text-indigo-600 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition">
                         {{ T .Lang "nav.my_courses" }}
@@ -17,6 +18,7 @@
                         {{ T .Lang "nav.profile" }}
                     </a>
                 </div>
+                {{end}}
             </div>
             <div class="flex items-center gap-3">
                 <!-- Language switcher -->
@@ -39,6 +41,7 @@
                     </div>
                 </div>
 
+                {{if .IsAuthenticated}}
                 <div class="relative ml-3">
                     <button type="button" class="flex items-center gap-2 focus:outline-none" onclick="toggleUserMenu()">
                         <span class="text-sm font-medium text-slate-700 hidden sm:block">{{.UserName}}</span>
@@ -49,6 +52,12 @@
                         <a href="/logout" class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50">{{ T .Lang "nav.logout" }}</a>
                     </div>
                 </div>
+                {{else}}
+                <a href="/auth/google/login" class="ml-3 inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 transition">
+                    <i class="fab fa-google text-xs"></i>
+                    {{ T .Lang "nav.login" }}
+                </a>
+                {{end}}
             </div>
         </div>
     </div>

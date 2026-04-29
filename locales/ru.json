@@ -122,6 +122,7 @@
   "course.reviews_loading": "Загрузка отзывов...",
   "course.reviews_error": "Ошибка загрузки отзывов.",
   "course.review_send_error": "Не удалось отправить отзыв",
+  "course.login_to_review": "Войдите, чтобы оставить отзыв",
   "course.lesson_read": "Прочитано",
   "course.lesson_read_action": "Читать",
 
@@ -143,6 +144,8 @@
   "lesson.loading_comments": "Загрузка комментариев...",
   "lesson.comments_error": "Ошибка загрузки комментариев.",
   "lesson.comment_send_error": "Не удалось отправить комментарий",
+  "lesson.login_to_comment": "Войдите, чтобы участвовать в обсуждении",
+  "lesson.login_to_progress": "Войдите, чтобы отслеживать прогресс",
 
   "quiz.history": "История ответов",
   "quiz.your_answer": "Ваш ответ:",

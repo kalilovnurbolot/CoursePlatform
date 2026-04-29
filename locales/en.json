@@ -122,6 +122,7 @@
   "course.reviews_loading": "Loading reviews...",
   "course.reviews_error": "Error loading reviews.",
   "course.review_send_error": "Failed to send review",
+  "course.login_to_review": "Sign in to leave a review",
   "course.lesson_read": "Read",
   "course.lesson_read_action": "Read",
 
@@ -143,6 +144,8 @@
   "lesson.loading_comments": "Loading comments...",
   "lesson.comments_error": "Error loading comments.",
   "lesson.comment_send_error": "Failed to send comment",
+  "lesson.login_to_comment": "Sign in to join the discussion",
+  "lesson.login_to_progress": "Sign in to track your progress",
 
   "quiz.history": "Answer history",
   "quiz.your_answer": "Your answer:",

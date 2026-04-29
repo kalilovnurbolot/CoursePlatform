@@ -128,6 +128,7 @@
     <section class="mt-16 border-t border-slate-200 pt-10">
         <h3 class="text-2xl font-bold text-slate-900 mb-6">{{ T .Lang "course.reviews_title" }}</h3>
 
+        {{if .IsAuthenticated}}
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 mb-8">
             <h4 class="text-sm font-bold text-slate-700 mb-3">{{ T .Lang "course.leave_review" }}</h4>
             <div class="flex items-center gap-2 mb-4" id="rating-stars">
@@ -142,6 +143,18 @@
                 <button onclick="postReview()" class="px-6 py-2 bg-indigo-600 text-white text-sm font-bold rounded-lg hover:bg-indigo-700 transition">{{ T .Lang "course.publish" }}</button>
             </div>
         </div>
+        {{else}}
+        <div class="bg-slate-50 border border-slate-200 rounded-2xl p-6 mb-8 flex items-center justify-between gap-4">
+            <div class="flex items-center gap-3 text-slate-500">
+                <i class="fas fa-lock text-slate-400"></i>
+                <span class="text-sm font-medium">{{ T .Lang "course.login_to_review" }}</span>
+            </div>
+            <a href="/auth/google/login" class="inline-flex items-center gap-2 px-5 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 transition flex-shrink-0">
+                <i class="fab fa-google text-xs"></i>
+                {{ T .Lang "nav.login" }}
+            </a>
+        </div>
+        {{end}}
 
         <div id="reviews-list" class="space-y-6">
             <div class="text-center text-slate-400 py-4">{{ T .Lang "course.reviews_loading" }}</div>

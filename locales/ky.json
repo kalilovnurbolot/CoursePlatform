@@ -122,6 +122,7 @@
   "course.reviews_loading": "Пикирлер жүктөлүүдө...",
   "course.reviews_error": "Пикирлерди жүктөөдө ката.",
   "course.review_send_error": "Пикир жиберүү мүмкүн болгон жок",
+  "course.login_to_review": "Пикир калтыруу үчүн кириңиз",
   "course.lesson_read": "Окулду",
   "course.lesson_read_action": "Окуу",
 
@@ -143,6 +144,8 @@
   "lesson.loading_comments": "Комментарийлер жүктөлүүдө...",
   "lesson.comments_error": "Комментарийлерди жүктөөдө ката.",
   "lesson.comment_send_error": "Комментарий жөнөтүү мүмкүн болгон жок",
+  "lesson.login_to_comment": "Талкууга катышуу үчүн кириңиз",
+  "lesson.login_to_progress": "Прогрессти байкоо үчүн кириңиз",
 
   "quiz.history": "Жооптордун тарыхы",
   "quiz.your_answer": "Сиздин жообуңуз:",
