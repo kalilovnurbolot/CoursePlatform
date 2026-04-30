@@ -32,12 +32,8 @@ func RequiredRole(h *handlers.Handler, requiredRoleID uint) func(next http.Handl
 				return
 			}
 
-			// 3. Динамическая Проверка RoleID
-			if user.RoleID != requiredRoleID {
-				// Если роль пользователя не соответствует требуемой
-				//http.Error(w, "Access Denied: Insufficient permissions", http.StatusForbidden)
-				//return
-
+			// 3. Проверка RoleID: пользователь должен иметь роль >= требуемой
+			if user.RoleID < requiredRoleID {
 				h.HandleForbiddenPage(w, r)
 				return
 			}

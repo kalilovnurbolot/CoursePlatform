@@ -245,36 +245,7 @@ func (h *Handler) logAction(userID uint, action, details string, courseID, lesso
 func (h *Handler) HandleAdmin(w http.ResponseWriter, r *http.Request) {}
 
 func (h *Handler) HandleProfile(w http.ResponseWriter, r *http.Request) {
-	session, _ := h.Store.Get(r, "session")
-
-	userIDvalue := session.Values["user_id"]
-	userID, ok := userIDvalue.(uint)
-	if !ok {
-		http.Redirect(w, r, "/", http.StatusSeeOther)
-		return
-	}
-
-	var user models.User
-	if err := h.DB.Preload("Role").First(&user, userID).Error; err != nil {
-		http.Error(w, "User not found", http.StatusNotFound)
-		return
-	}
-
-	lang := h.DetectLang(r)
-
-	data := PageData{
-		Title:           i18n.T(lang, "nav.profile"),
-		IsAuthenticated: true,
-		UserID:          user.ID,
-		Email:           user.Email,
-		UserName:        user.Name,
-		UserPictureURL:  user.Picture,
-		RoleID:          user.RoleID,
-		Lang:            lang,
-		TransJSON:       buildTransJSON(lang),
-	}
-
-	h.Tmpl.ExecuteTemplate(w, "profile.html", data)
+	http.Redirect(w, r, "/cabinet", http.StatusMovedPermanently)
 }
 
 func (h *Handler) HandleGoogleLogin(w http.ResponseWriter, r *http.Request) {
