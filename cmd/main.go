@@ -140,6 +140,10 @@ func main() {
 	r.HandleFunc("/api/admin/course-requests", adminMiddleware(adminService.GetCourseRequestsAPI)).Methods("GET")
 	r.HandleFunc("/api/admin/course-requests/{id:[0-9]+}", adminMiddleware(adminService.ReviewCourseRequestAPI)).Methods("PUT")
 
+	// Admin — user management
+	r.HandleFunc("/api/admin/users", adminMiddleware(adminService.GetUsersAPI)).Methods("GET")
+	r.HandleFunc("/api/admin/users/{id:[0-9]+}/role", adminMiddleware(adminService.UpdateUserRoleAPI)).Methods("PUT")
+
 	// Comments & Reviews
 	r.HandleFunc("/api/lessons/{id}/comments", userMiddleware(h.AddCommentAPI)).Methods("POST")
 	r.HandleFunc("/api/lessons/{id}/comments", h.GetCommentsAPI).Methods("GET")

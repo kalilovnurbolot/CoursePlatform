@@ -40,6 +40,7 @@ This is a Go web application using `gorilla/mux` for routing, `gorm` with Postgr
 | `internal/handlers/userprofile.go` | `HandleUserProfilePage` — public profile at `/user/{id}` |
 | `internal/handlers/admin` | Admin `Service` struct (embeds `Handler`) — course/module/lesson CRUD, enrollment management, journal/reports |
 | `internal/handlers/admin/course_requests.go` | `HandleCourseRequestsPage`, `GetCourseRequestsAPI`, `ReviewCourseRequestAPI` — admin approval workflow |
+| `internal/handlers/admin/users_api.go` | `GetUsersAPI`, `UpdateUserRoleAPI` — user list with search/filter and role management |
 | `internal/handlers/personal` | Student "my courses" view |
 | `internal/middleware` | `RequiredRole` — wraps `http.HandlerFunc`, checks session + DB role (`user.RoleID >= requiredRoleID`), renders 403 page on failure |
 | `internal/models` | GORM models: `User`, `Role`, `Course`, `Module`, `Lesson`, `ContentBlock`, `Enrollment`, `LessonProgress`, `QuizAttempt`, `Comment`, `Review`, `Certificate`, `UserLog` |
@@ -88,6 +89,7 @@ Key templates added:
 | `template/personal/studio.html` | `/studio` | Full course editor for regular users; calls `/api/studio/...` |
 | `template/personal/user_profile.html` | `/user/{id}` | Public profile with course cards and enrollment actions |
 | `template/admin/course_requests.html` | `/admin/course-requests` | Admin review panel; approve/reject with note |
+| `template/admin/users.html` | `/admin/users` | Admin user management — search, filter by role, change role inline |
 
 Use `{{ T .Lang "key" }}` in Go templates to get a translated string. For JavaScript inside templates, the full translation map is embedded via `{{.TransJSON}}` and accessed with `t('key')`:
 
@@ -165,6 +167,22 @@ The studio page shows all courses where `author_id = userID` (all statuses). Eac
 
 Admin actions are at `GET /admin/course-requests` (page) and `PUT /api/admin/course-requests/{id}` with `{"action":"approve"|"reject","review_note":"..."}`.
 
+### Admin user management (`/admin/users`)
+
+`GET /admin/users` — requires `adminMiddleware`. Renders `users.html` (template name `adminUsers`).
+
+**API endpoints** — both require `adminMiddleware`:
+
+| Method | Path | Action |
+|---|---|---|
+| `GET` | `/api/admin/users` | Paginated user list; query params: `search` (name/email ILIKE), `role` (RoleID int), `page` (default 1, 20 per page) |
+| `PUT` | `/api/admin/users/{id}/role` | Change a user's role; body `{"role_id": uint}` |
+
+**Business rules:**
+- An admin cannot demote their own role below `RoleAdmin` (returns `403 cannot demote yourself`).
+- `role_id` must match an existing `Role` row or the request is rejected with `400`.
+- The page renders a table with avatar, name, email, colour-coded role badge, and an inline `<select>` for instant role change.
+
 ### Public user profile (`/user/{id}`)
 
 `GET /user/{id}` — public, no auth required. Renders `user_profile.html`.
@@ -214,6 +232,7 @@ TransJSON: BuildTransJSON(lang),  // exported helper in handlers package
 - `userprofile.*` — Public user profile page strings
 - `creq.*` — Admin course-requests panel strings
 - `nav.studio` — "My Studio" navigation link
+- `admin.users_*` — Admin user management page strings
 
 **Adding a new translation key:**
 1. Add the key/value to all three `locales/*.json` files.
