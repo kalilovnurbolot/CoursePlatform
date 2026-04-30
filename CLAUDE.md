@@ -34,11 +34,11 @@ This is a Go web application using `gorilla/mux` for routing, `gorm` with Postgr
 
 | Package | Role |
 |---|---|
-| `internal/handlers` | Base `Handler` struct (holds DB, session store, OAuth config, parsed templates), auth flows, main page, profile, language endpoint |
+| `internal/handlers` | Base `Handler` struct — auth flows, main page, language endpoint, `logAction` helper, `HandleCabinet` (personal cabinet), `HandleVerifyCertificate` |
 | `internal/handlers/admin` | Admin `Service` struct (embeds `Handler`) — course/module/lesson CRUD API, enrollment management, journal/reports pages |
 | `internal/handlers/personal` | Student "my courses" view |
-| `internal/middleware` | `RequiredRole` — wraps `http.HandlerFunc`, checks session + DB role, renders 403 page on failure |
-| `internal/models` | GORM models: `User`, `Role`, `Course`, `Module`, `Lesson`, `ContentBlock`, `Enrollment`, `LessonProgress`, `QuizAttempt`, `Comment`, `Review` |
+| `internal/middleware` | `RequiredRole` — wraps `http.HandlerFunc`, checks session + DB role (`user.RoleID >= requiredRoleID`), renders 403 page on failure |
+| `internal/models` | GORM models: `User`, `Role`, `Course`, `Module`, `Lesson`, `ContentBlock`, `Enrollment`, `LessonProgress`, `QuizAttempt`, `Comment`, `Review`, `Certificate`, `UserLog` |
 | `internal/auth` | Google OAuth2 config init |
 | `internal/storage` | `SaveUser` — upserts a Google user into the DB |
 | `internal/database` | `Connect` (5-retry loop), `AutoMigrate`, `Seed` |
@@ -51,7 +51,7 @@ Authentication is Google OAuth only (`/auth/google/login` → `/auth/google/call
 Role constants are defined in `internal/models/role.go`:
 - `RoleGuest = 0`, `RoleUser = 1`, `RoleAdmin = 2`, `RoleManager = 3`
 
-`RequiredRole(h, models.RoleAdmin)` and `RequiredRole(h, models.RoleUser)` are used as route middleware wrappers in `main.go`.
+`RequiredRole(h, models.RoleAdmin)` and `RequiredRole(h, models.RoleUser)` are used as route middleware wrappers in `main.go`. The check is **`user.RoleID >= requiredRoleID`** — higher roles always have access to lower-role routes.
 
 ### Data model hierarchy
 
@@ -64,6 +64,10 @@ Course → []Module → []Lesson → []ContentBlock
 `Enrollment` links a `User` to a `Course` with a `Status` of `pending | approved | rejected`.
 
 `LessonProgress` and `QuizAttempt` track per-user completion and quiz answers.
+
+`Certificate` is auto-issued when a user completes 100% of a course (checked in `MarkLessonReadAPI`). Has a unique `(UserID, CourseID)` index — one cert per course. `Code` is a 32-char hex string for public verification at `/certificate/{code}`.
+
+`UserLog` records user activity. Action constants are in `internal/models/log.go`: `LogLogin`, `LogLessonView`, `LogQuizAttempt`, `LogCourseComplete`, `LogReviewAdded`. Written via `h.logAction(userID, action, details, courseID, lessonID)` helper on `Handler`.
 
 ### Templates
 
@@ -90,6 +94,22 @@ Quiz/progress API endpoints (`/api/course/.../quiz`, `/api/course/.../done`) sti
 
 `/api/home` returns `open_courses []Course` (separate from `courses`) — only courses where `is_published = true AND is_open = true`, preloaded with `Modules.Lessons` for the lesson count on the card.
 
+### Personal cabinet
+
+`GET /cabinet` — main personal dashboard, requires `userMiddleware`. Renders `cabinet.html`.
+
+`HandleCabinet` calls `buildCabinetData(userID)` which aggregates in one pass:
+- **Stats**: enrolled count, completed (= certificate count), lessons done, quiz accuracy %
+- **Courses**: split into `InProgress` / `Completed` (has certificate) / `Pending` (pending|rejected enrollments)
+- **AuthoredCourses**: courses where `author_id = userID`, with student count and avg rating
+- **Activity**: last 10 `UserLog` rows
+- **Reviews**: user's own reviews with preloaded `Course`
+- **Certificates**: user's certificates with preloaded `Course`
+
+`GET /certificate/{code}` — public verification page, no auth required. Renders `certificate.html`.
+
+`GET /personal` — redirects 301 to `/cabinet` (kept for backward compatibility).
+
 ### Key invariant: content block updates
 
 `PUT /api/lessons/{id}/content` uses a transaction that checks whether any `QuizAttempt` rows reference blocks being modified or deleted. If they do and `force_reset` is false, it returns `409 BLOCK_HAS_ANSWERS`. Callers must pass `"force_reset": true` to override.
@@ -98,7 +118,7 @@ Quiz/progress API endpoints (`/api/course/.../quiz`, `/api/course/.../done`) sti
 
 The app supports three languages: **Russian (`ru`)**, **English (`en`)**, **Kyrgyz (`ky`)**.
 
-**Translation files:** `locales/ru.json`, `locales/en.json`, `locales/ky.json` — flat key/value JSON, ~150 keys each.  
+**Translation files:** `locales/ru.json`, `locales/en.json`, `locales/ky.json` — flat key/value JSON, ~190 keys each.  
 **Loader:** `i18n.Load("locales")` is called once in `main.go` before anything else.
 
 **Language detection priority** (highest → lowest):
