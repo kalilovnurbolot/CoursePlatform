@@ -115,6 +115,31 @@ func main() {
 	r.HandleFunc("/api/course/{id:[0-9]+}/lesson/{lesson_id:[0-9]+}/done", userMiddleware(h.MarkLessonReadAPI)).Methods("POST")
 	r.HandleFunc("/course/{id:[0-9]+}/lesson/{lesson_id:[0-9]+}", h.HandleLessonView).Methods("GET")
 
+	// Public user profile
+	r.HandleFunc("/user/{id:[0-9]+}", h.HandleUserProfilePage).Methods("GET")
+
+	// Studio (all authenticated users — author-scoped)
+	r.HandleFunc("/studio", userMiddleware(h.HandleStudioPage)).Methods("GET")
+	r.HandleFunc("/api/studio/courses", userMiddleware(h.StudioGetCoursesAPI)).Methods("GET")
+	r.HandleFunc("/api/studio/courses", userMiddleware(h.StudioCreateCourseAPI)).Methods("POST")
+	r.HandleFunc("/api/studio/courses/{id:[0-9]+}", userMiddleware(h.StudioUpdateCourseAPI)).Methods("PUT")
+	r.HandleFunc("/api/studio/courses/{id:[0-9]+}", userMiddleware(h.StudioDeleteCourseAPI)).Methods("DELETE")
+	r.HandleFunc("/api/studio/courses/{id:[0-9]+}/submit", userMiddleware(h.StudioSubmitCourseAPI)).Methods("POST")
+	r.HandleFunc("/api/studio/courses/{id:[0-9]+}/structure", userMiddleware(h.StudioGetCourseStructureAPI)).Methods("GET")
+	r.HandleFunc("/api/studio/modules", userMiddleware(h.StudioCreateModuleAPI)).Methods("POST")
+	r.HandleFunc("/api/studio/modules/{id:[0-9]+}", userMiddleware(h.StudioUpdateModuleAPI)).Methods("PUT")
+	r.HandleFunc("/api/studio/modules/{id:[0-9]+}", userMiddleware(h.StudioDeleteModuleAPI)).Methods("DELETE")
+	r.HandleFunc("/api/studio/lessons", userMiddleware(h.StudioCreateLessonAPI)).Methods("POST")
+	r.HandleFunc("/api/studio/lessons/{id:[0-9]+}", userMiddleware(h.StudioUpdateLessonAPI)).Methods("PUT")
+	r.HandleFunc("/api/studio/lessons/{id:[0-9]+}", userMiddleware(h.StudioDeleteLessonAPI)).Methods("DELETE")
+	r.HandleFunc("/api/studio/lessons/{id:[0-9]+}", userMiddleware(h.StudioGetLessonAPI)).Methods("GET")
+	r.HandleFunc("/api/studio/lessons/{id:[0-9]+}/content", userMiddleware(h.StudioUpdateLessonContentAPI)).Methods("PUT")
+
+	// Admin — course review requests
+	r.HandleFunc("/admin/course-requests", adminMiddleware(adminService.HandleCourseRequestsPage)).Methods("GET")
+	r.HandleFunc("/api/admin/course-requests", adminMiddleware(adminService.GetCourseRequestsAPI)).Methods("GET")
+	r.HandleFunc("/api/admin/course-requests/{id:[0-9]+}", adminMiddleware(adminService.ReviewCourseRequestAPI)).Methods("PUT")
+
 	// Comments & Reviews
 	r.HandleFunc("/api/lessons/{id}/comments", userMiddleware(h.AddCommentAPI)).Methods("POST")
 	r.HandleFunc("/api/lessons/{id}/comments", h.GetCommentsAPI).Methods("GET")

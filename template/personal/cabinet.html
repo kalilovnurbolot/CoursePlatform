@@ -245,6 +245,10 @@
             <a href="/admin/courses" class="text-sm text-indigo-600 font-semibold hover:underline">
                 {{ T .Lang "cabinet.manage_link" }} →
             </a>
+            {{else}}
+            <a href="/studio" class="text-sm text-indigo-600 font-semibold hover:underline">
+                {{ T .Lang "cabinet.manage_link" }} →
+            </a>
             {{end}}
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">

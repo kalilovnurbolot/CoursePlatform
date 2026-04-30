@@ -92,6 +92,10 @@ type PageData struct {
 
 	Cabinet     CabinetData
 	Certificate models.Certificate
+
+	// User profile page
+	ProfileUser    *models.User
+	ProfileCourses []ProfileCourseView
 }
 
 // DetectLang resolves the best language for a request.
@@ -176,13 +180,15 @@ func (h *Handler) GetHomeDataAPI(w http.ResponseWriter, r *http.Request) {
 		Reviews     []models.Review `json:"reviews"`
 	}
 
-	if err := h.DB.Preload("Author").Where("is_published = ?", true).Find(&response.Courses).Error; err != nil {
+	if err := h.DB.Preload("Author").
+		Where("is_published = ? AND (admin_status = ? OR admin_status = ?)", true, "approved", "").
+		Find(&response.Courses).Error; err != nil {
 		http.Error(w, "Database error", http.StatusInternalServerError)
 		return
 	}
 
 	h.DB.Preload("Author").Preload("Modules.Lessons").
-		Where("is_published = ? AND is_open = ?", true, true).
+		Where("is_published = ? AND is_open = ? AND (admin_status = ? OR admin_status = ?)", true, true, "approved", "").
 		Find(&response.OpenCourses)
 
 	h.DB.Preload("User").Preload("Course").

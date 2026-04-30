@@ -34,8 +34,12 @@ This is a Go web application using `gorilla/mux` for routing, `gorm` with Postgr
 
 | Package | Role |
 |---|---|
-| `internal/handlers` | Base `Handler` struct — auth flows, main page, language endpoint, `logAction` helper, `HandleCabinet` (personal cabinet), `HandleVerifyCertificate` |
-| `internal/handlers/admin` | Admin `Service` struct (embeds `Handler`) — course/module/lesson CRUD API, enrollment management, journal/reports pages |
+| `internal/handlers` | Base `Handler` struct — auth flows, main page, language endpoint, `logAction` helper |
+| `internal/handlers/cabinet.go` | `HandleCabinet` (personal dashboard), `HandleVerifyCertificate` |
+| `internal/handlers/studio.go` | `HandleStudioPage` + all `/api/studio/...` course/module/lesson/content APIs (author-scoped) |
+| `internal/handlers/userprofile.go` | `HandleUserProfilePage` — public profile at `/user/{id}` |
+| `internal/handlers/admin` | Admin `Service` struct (embeds `Handler`) — course/module/lesson CRUD, enrollment management, journal/reports |
+| `internal/handlers/admin/course_requests.go` | `HandleCourseRequestsPage`, `GetCourseRequestsAPI`, `ReviewCourseRequestAPI` — admin approval workflow |
 | `internal/handlers/personal` | Student "my courses" view |
 | `internal/middleware` | `RequiredRole` — wraps `http.HandlerFunc`, checks session + DB role (`user.RoleID >= requiredRoleID`), renders 403 page on failure |
 | `internal/models` | GORM models: `User`, `Role`, `Course`, `Module`, `Lesson`, `ContentBlock`, `Enrollment`, `LessonProgress`, `QuizAttempt`, `Comment`, `Review`, `Certificate`, `UserLog` |
@@ -61,6 +65,10 @@ Course → []Module → []Lesson → []ContentBlock
 
 `ContentBlock.Type` can be: `"text"`, `"code"`, `"video"`, `"quiz"`, `"vocabulary"`, `"audio_dictation"`. `ContentBlock.Data` is a free-form `datatypes.JSON` field.
 
+`Course` has two additional fields added for the creator workflow:
+- `AdminStatus string` — `"draft" | "pending_review" | "approved" | "rejected"`. Default is `"approved"` (so existing and admin-created courses remain visible). Studio-created courses start as `"draft"`.
+- `ReviewNote string` — filled by admin when rejecting, shown to the course author.
+
 `Enrollment` links a `User` to a `Course` with a `Status` of `pending | approved | rejected`.
 
 `LessonProgress` and `QuizAttempt` track per-user completion and quiz answers.
@@ -71,7 +79,15 @@ Course → []Module → []Lesson → []ContentBlock
 
 ### Templates
 
-All HTML templates are parsed once at startup via `template.ParseGlob`. Templates in `template/*.html` and `template/**/*.html` share a single `*template.Template` instance with custom funcs (`mod`, `add`, `formatTime`, `T`). Template names match their filenames (e.g. `"index.html"`, `"profile.html"`).
+All HTML templates are parsed once at startup via `template.ParseGlob`. Templates in `template/*.html` and `template/**/*.html` share a single `*template.Template` instance with custom funcs (`mod`, `add`, `formatTime`, `T`). Template names match their filenames (e.g. `"index.html"`, `"cabinet.html"`).
+
+Key templates added:
+
+| Template | Route | Notes |
+|---|---|---|
+| `template/personal/studio.html` | `/studio` | Full course editor for regular users; calls `/api/studio/...` |
+| `template/personal/user_profile.html` | `/user/{id}` | Public profile with course cards and enrollment actions |
+| `template/admin/course_requests.html` | `/admin/course-requests` | Admin review panel; approve/reject with note |
 
 Use `{{ T .Lang "key" }}` in Go templates to get a translated string. For JavaScript inside templates, the full translation map is embedded via `{{.TransJSON}}` and accessed with `t('key')`:
 
@@ -92,7 +108,7 @@ Use `{{ T .Lang "key" }}` in Go templates to get a translated string. For JavaSc
 
 Quiz/progress API endpoints (`/api/course/.../quiz`, `/api/course/.../done`) still require `userMiddleware` since saving progress requires knowing who the user is.
 
-`/api/home` returns `open_courses []Course` (separate from `courses`) — only courses where `is_published = true AND is_open = true`, preloaded with `Modules.Lessons` for the lesson count on the card.
+`/api/home` returns `open_courses []Course` (separate from `courses`) — only courses where `is_published = true AND is_open = true AND (admin_status = 'approved' OR admin_status = '')`, preloaded with `Modules.Lessons` for the lesson count on the card. The `admin_status` filter ensures only approved user-created courses appear publicly; the `OR admin_status = ''` guard keeps older rows (created before the field existed) visible.
 
 ### Personal cabinet
 
@@ -110,6 +126,60 @@ Quiz/progress API endpoints (`/api/course/.../quiz`, `/api/course/.../done`) sti
 
 `GET /personal` — redirects 301 to `/cabinet` (kept for backward compatibility).
 
+### User Studio (`/studio`)
+
+`GET /studio` — requires `userMiddleware`. Any authenticated user can create and manage their own courses. Renders `studio.html`.
+
+The studio page shows all courses where `author_id = userID` (all statuses). Each card displays the `admin_status` badge, a rejection note if rejected, and context-appropriate action buttons.
+
+**Studio API endpoints** — all require `userMiddleware`; each handler additionally checks `author_id = userID`:
+
+| Method | Path | Action |
+|---|---|---|
+| `GET` | `/api/studio/courses` | List own courses |
+| `POST` | `/api/studio/courses` | Create course (sets `admin_status = "draft"`) |
+| `PUT` | `/api/studio/courses/{id}` | Update basic info (blocked if `pending_review`) |
+| `DELETE` | `/api/studio/courses/{id}` | Delete (blocked if `approved`) |
+| `POST` | `/api/studio/courses/{id}/submit` | Submit for review → `pending_review` (requires ≥1 lesson) |
+| `GET` | `/api/studio/courses/{id}/structure` | Full module/lesson tree |
+| `POST/PUT/DELETE` | `/api/studio/modules/{id}` | Module CRUD (checks course author) |
+| `POST/GET/PUT/DELETE` | `/api/studio/lessons/{id}` | Lesson CRUD (checks course author) |
+| `PUT` | `/api/studio/lessons/{id}/content` | Save content blocks (same 409/force_reset logic as admin API) |
+
+**Editing rules:** A course in `pending_review` cannot be edited. Editing a `rejected` course resets it to `draft` and clears `review_note`.
+
+### Course admin-status lifecycle
+
+```
+[User creates]
+    draft
+      │  user clicks "Submit for review"
+      ▼
+  pending_review
+      │  admin approves          admin rejects (with note)
+      ▼                              ▼
+  approved                        rejected
+  (is_published=true → visible)     │  user edits → resets to draft
+                                     └──► draft → ...
+```
+
+Admin actions are at `GET /admin/course-requests` (page) and `PUT /api/admin/course-requests/{id}` with `{"action":"approve"|"reject","review_note":"..."}`.
+
+### Public user profile (`/user/{id}`)
+
+`GET /user/{id}` — public, no auth required. Renders `user_profile.html`.
+
+Shows the profiled user's avatar, name, and all their courses where `admin_status = 'approved' AND is_published = true`. For the current viewer, enrollment status per course is looked up so the correct action button is shown (Start / Go to course / Pending / Enroll / Login).
+
+`ProfileCourseView` (defined in `userprofile.go`, also registered in `PageData`):
+```go
+type ProfileCourseView struct {
+    Course           models.Course
+    LessonCount      int
+    EnrollmentStatus string // "pending" | "approved" | "rejected" | ""
+}
+```
+
 ### Key invariant: content block updates
 
 `PUT /api/lessons/{id}/content` uses a transaction that checks whether any `QuizAttempt` rows reference blocks being modified or deleted. If they do and `force_reset` is false, it returns `409 BLOCK_HAS_ANSWERS`. Callers must pass `"force_reset": true` to override.
@@ -118,7 +188,7 @@ Quiz/progress API endpoints (`/api/course/.../quiz`, `/api/course/.../done`) sti
 
 The app supports three languages: **Russian (`ru`)**, **English (`en`)**, **Kyrgyz (`ky`)**.
 
-**Translation files:** `locales/ru.json`, `locales/en.json`, `locales/ky.json` — flat key/value JSON, ~190 keys each.  
+**Translation files:** `locales/ru.json`, `locales/en.json`, `locales/ky.json` — flat key/value JSON, ~250 keys each.  
 **Loader:** `i18n.Load("locales")` is called once in `main.go` before anything else.
 
 **Language detection priority** (highest → lowest):
@@ -138,6 +208,12 @@ TransJSON: BuildTransJSON(lang),  // exported helper in handlers package
 - `POST /api/language` `{"lang": "en"}` — sets `lang` cookie (1 year) and, if authenticated, updates `User.Language` in DB.
 - On Google login callback, the pre-login cookie lang is persisted to DB; if no cookie, the saved DB lang is restored to cookie.
 - First-visit JS modal: shown when `navigator.language` base code ≠ `SITE_LANG` and `localStorage.lang_chosen` is not set.
+
+**Key namespaces added:**
+- `studio.*` — User Studio page strings
+- `userprofile.*` — Public user profile page strings
+- `creq.*` — Admin course-requests panel strings
+- `nav.studio` — "My Studio" navigation link
 
 **Adding a new translation key:**
 1. Add the key/value to all three `locales/*.json` files.

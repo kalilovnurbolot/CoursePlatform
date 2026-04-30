@@ -1,0 +1,176 @@
+{{define "course_requests.html"}}
+<!DOCTYPE html>
+<html lang="{{.Lang}}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.Title}}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script>const I18N = {{.TransJSON}};</script>
+    <script>function t(k){return I18N[k]||k;}</script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+{{template "adminBarPanel" .}}
+
+<main class="max-w-5xl mx-auto px-4 sm:px-6 py-8 pt-24">
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-900">{{ T .Lang "creq.title" }}</h1>
+      <p class="text-slate-400 text-sm mt-1">{{ T .Lang "creq.subtitle" }}</p>
+    </div>
+    <span id="pending-count" class="text-xs bg-yellow-100 text-yellow-800 font-bold px-3 py-1 rounded-full"></span>
+  </div>
+
+  <!-- Loading -->
+  <div id="loading" class="text-center py-20 text-slate-400">
+    <i class="fas fa-spinner fa-spin text-3xl mb-3"></i>
+    <p>{{ T .Lang "admin.enroll_loading" }}</p>
+  </div>
+
+  <!-- Empty -->
+  <div id="empty-state" class="hidden text-center py-20 text-slate-400">
+    <i class="fas fa-check-circle text-5xl mb-4 text-green-200"></i>
+    <p class="font-medium">{{ T .Lang "creq.empty_title" }}</p>
+    <p class="text-sm mt-1">{{ T .Lang "creq.empty_desc" }}</p>
+  </div>
+
+  <!-- List -->
+  <div id="requests-list" class="space-y-4 hidden"></div>
+</main>
+
+<!-- Reject Modal -->
+<div id="reject-modal" class="fixed inset-0 z-50 hidden bg-black/40 flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+    <h2 class="text-lg font-bold text-slate-900 mb-4">{{ T .Lang "creq.reject_title" }}</h2>
+    <label class="block text-sm font-medium text-slate-700 mb-1">{{ T .Lang "creq.reject_note_label" }}</label>
+    <textarea id="reject-note" rows="4" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-400 focus:outline-none resize-none" placeholder="{{ T .Lang "creq.reject_note_placeholder" }}"></textarea>
+    <div class="flex gap-3 mt-4">
+      <button id="reject-confirm-btn" onclick="confirmReject()" class="flex-1 bg-red-600 text-white py-2 rounded-lg text-sm font-semibold hover:bg-red-700 transition">
+        {{ T .Lang "creq.reject_btn" }}
+      </button>
+      <button onclick="document.getElementById('reject-modal').classList.add('hidden')" class="flex-1 border border-slate-200 text-slate-700 py-2 rounded-lg text-sm hover:bg-slate-50 transition">
+        {{ T .Lang "admin.course_cancel" }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+let rejectTargetID = null;
+
+document.addEventListener('DOMContentLoaded', loadRequests);
+
+async function loadRequests() {
+  const res = await fetch('/api/admin/course-requests');
+  document.getElementById('loading').classList.add('hidden');
+
+  if (!res.ok) {
+    document.getElementById('requests-list').innerHTML = `<p class="text-red-500 text-center py-10">${t('common.network_error')}</p>`;
+    document.getElementById('requests-list').classList.remove('hidden');
+    return;
+  }
+
+  const courses = await res.json();
+  const count = document.getElementById('pending-count');
+  count.textContent = `${courses.length} ${t('creq.pending_suffix')}`;
+
+  if (!courses || courses.length === 0) {
+    document.getElementById('empty-state').classList.remove('hidden');
+    return;
+  }
+
+  const list = document.getElementById('requests-list');
+  list.innerHTML = '';
+  courses.forEach(c => {
+    const lessonCount = (c.modules || []).reduce((s, m) => s + (m.lessons || []).length, 0);
+    const authorName = c.author ? c.author.name : '—';
+    const submittedDate = new Date(c.updated_at).toLocaleDateString();
+
+    const el = document.createElement('div');
+    el.id = `req-${c.id}`;
+    el.className = 'bg-white rounded-xl shadow-sm border border-slate-100 p-5';
+    el.innerHTML = `
+      <div class="flex flex-col sm:flex-row gap-4">
+        ${c.image_url ? `<img src="${c.image_url}" class="w-full sm:w-32 h-24 object-cover rounded-lg flex-shrink-0">` : `<div class="w-full sm:w-32 h-24 bg-gradient-to-br from-indigo-50 to-slate-100 rounded-lg flex items-center justify-center flex-shrink-0"><i class="fas fa-graduation-cap text-3xl text-slate-300"></i></div>`}
+        <div class="flex-1 min-w-0">
+          <div class="flex items-start justify-between gap-2">
+            <h3 class="font-bold text-slate-800 leading-snug">${escHtml(c.title)}</h3>
+            <span class="text-xs bg-yellow-100 text-yellow-800 font-bold px-2 py-0.5 rounded-full shrink-0">${t('creq.status_pending')}</span>
+          </div>
+          <p class="text-sm text-slate-400 mt-1 line-clamp-2">${escHtml(c.description || t('modal.no_desc'))}</p>
+          <div class="mt-2 flex flex-wrap gap-3 text-xs text-slate-500">
+            <span><i class="fas fa-user mr-1"></i>${escHtml(authorName)}</span>
+            <span><i class="fas fa-book-open mr-1"></i>${lessonCount} ${t('courses.lessons_suffix')}</span>
+            <span><i class="fas fa-calendar mr-1"></i>${submittedDate}</span>
+            ${c.language ? `<span><i class="fas fa-globe mr-1"></i>${c.language}</span>` : ''}
+            ${c.is_open ? `<span class="text-emerald-600"><i class="fas fa-lock-open mr-1"></i>${t('courses.open_badge')}</span>` : ''}
+          </div>
+          <div class="mt-2">
+            <p class="text-xs text-slate-500 font-medium mb-1">${t('creq.modules_label')}:</p>
+            <div class="flex flex-wrap gap-1">
+              ${(c.modules || []).map(m => `<span class="text-[11px] bg-slate-50 border border-slate-200 px-2 py-0.5 rounded">${escHtml(m.title)} (${(m.lessons||[]).length})</span>`).join('') || `<span class="text-xs text-slate-300">${t('admin.course_no_modules')}</span>`}
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="mt-4 flex gap-3 border-t pt-4">
+        <a href="/course/${c.id}/learn" target="_blank" class="text-xs px-3 py-2 bg-slate-50 text-slate-700 border border-slate-200 rounded-lg hover:bg-slate-100 transition font-medium">
+          <i class="fas fa-eye mr-1"></i>${t('creq.preview')}
+        </a>
+        <button onclick="approve(${c.id})" class="flex-1 bg-green-600 text-white py-2 rounded-lg text-sm font-semibold hover:bg-green-700 transition flex items-center justify-center gap-2">
+          <i class="fas fa-check"></i> ${t('creq.approve_btn')}
+        </button>
+        <button onclick="openRejectModal(${c.id})" class="flex-1 bg-red-50 text-red-700 border border-red-200 py-2 rounded-lg text-sm font-semibold hover:bg-red-100 transition flex items-center justify-center gap-2">
+          <i class="fas fa-times"></i> ${t('creq.reject_btn')}
+        </button>
+      </div>`;
+    list.appendChild(el);
+  });
+
+  list.classList.remove('hidden');
+}
+
+async function approve(id) {
+  if (!confirm(t('creq.confirm_approve'))) return;
+  const res = await fetch(`/api/admin/course-requests/${id}`, {
+    method: 'PUT',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ action: 'approve' })
+  });
+  if (!res.ok) { const e = await res.json(); alert(e.error || t('common.network_error')); return; }
+  const row = document.getElementById(`req-${id}`);
+  if (row) {
+    row.style.transition = 'opacity .3s';
+    row.style.opacity = '0';
+    setTimeout(() => row.remove(), 300);
+  }
+  loadRequests();
+}
+
+function openRejectModal(id) {
+  rejectTargetID = id;
+  document.getElementById('reject-note').value = '';
+  document.getElementById('reject-modal').classList.remove('hidden');
+}
+
+async function confirmReject() {
+  const note = document.getElementById('reject-note').value.trim();
+  if (!note) { alert(t('creq.note_required')); return; }
+  const res = await fetch(`/api/admin/course-requests/${rejectTargetID}`, {
+    method: 'PUT',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ action: 'reject', review_note: note })
+  });
+  document.getElementById('reject-modal').classList.add('hidden');
+  if (!res.ok) { const e = await res.json(); alert(e.error || t('common.network_error')); return; }
+  const row = document.getElementById(`req-${rejectTargetID}`);
+  if (row) { row.style.opacity = '0'; setTimeout(() => row.remove(), 300); }
+  loadRequests();
+}
+
+function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+</script>
+</body>
+</html>
+{{end}}

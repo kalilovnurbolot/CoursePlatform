@@ -22,6 +22,10 @@ type Course struct {
 	IsOpen      bool   `json:"is_open"`
 	AuthorID    uint   `json:"author_id"`
 
+	// Admin approval workflow: draft | pending_review | approved | rejected
+	AdminStatus string `json:"admin_status" gorm:"default:'approved'"`
+	ReviewNote  string `json:"review_note"`
+
 	Author  User     `json:"author" gorm:"foreignKey:AuthorID"`
 	Modules []Module `json:"modules" gorm:"constraint:OnDelete:CASCADE;"`
 }

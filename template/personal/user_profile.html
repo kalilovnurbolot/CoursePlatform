@@ -1,0 +1,139 @@
+{{define "user_profile.html"}}
+<!DOCTYPE html>
+<html lang="{{.Lang}}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.Title}}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script>const I18N = {{.TransJSON}};</script>
+    <script>function t(k){return I18N[k]||k;}</script>
+</head>
+<body class="bg-slate-50 min-h-screen">
+{{template "header" .}}
+
+<main class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+
+  {{if .ProfileUser}}
+  <!-- Profile header -->
+  <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-8 mb-8 flex flex-col sm:flex-row items-center sm:items-start gap-6">
+    {{if .ProfileUser.Picture}}
+    <img src="{{.ProfileUser.Picture}}" class="w-24 h-24 rounded-full object-cover border-4 border-white shadow-md flex-shrink-0">
+    {{else}}
+    <div class="w-24 h-24 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-3xl text-white font-bold flex-shrink-0">
+      <i class="fas fa-user"></i>
+    </div>
+    {{end}}
+    <div class="text-center sm:text-left">
+      <h1 class="text-2xl font-bold text-slate-900">{{.ProfileUser.Name}}</h1>
+      <p class="text-slate-400 text-sm mt-1">{{ T .Lang "userprofile.author_label" }}</p>
+      <div class="mt-3 flex flex-wrap justify-center sm:justify-start gap-3">
+        <span class="text-xs bg-indigo-50 text-indigo-700 font-semibold px-3 py-1 rounded-full">
+          <i class="fas fa-chalkboard-teacher mr-1"></i>
+          {{len .ProfileCourses}} {{ T .Lang "userprofile.courses_count" }}
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Courses -->
+  <h2 class="text-lg font-bold text-slate-900 mb-5">{{ T .Lang "userprofile.courses_title" }}</h2>
+
+  {{if .ProfileCourses}}
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+    {{range .ProfileCourses}}
+    {{$c := .Course}}
+    {{$enroll := .EnrollmentStatus}}
+    {{$count := .LessonCount}}
+    <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden flex flex-col hover:shadow-md transition">
+      {{if $c.ImageURL}}
+      <img src="{{$c.ImageURL}}" class="w-full h-40 object-cover">
+      {{else}}
+      <div class="w-full h-40 bg-gradient-to-br from-indigo-50 to-slate-100 flex items-center justify-center">
+        <i class="fas fa-graduation-cap text-5xl text-slate-200"></i>
+      </div>
+      {{end}}
+      <div class="p-5 flex flex-col flex-1">
+        <div class="flex items-start gap-2 mb-1">
+          <h3 class="font-semibold text-slate-800 flex-1 leading-snug">{{$c.Title}}</h3>
+          {{if $c.IsOpen}}
+          <span class="text-[10px] bg-emerald-100 text-emerald-700 font-bold px-2 py-0.5 rounded-full shrink-0">{{ T $.Lang "courses.open_badge" }}</span>
+          {{end}}
+        </div>
+        <p class="text-sm text-slate-400 line-clamp-2 flex-1 mt-1">{{$c.Description}}</p>
+        <div class="mt-2 text-xs text-slate-400 flex items-center gap-1">
+          <i class="fas fa-book-open"></i>
+          {{$count}} {{ T $.Lang "courses.lessons_suffix" }}
+        </div>
+
+        <!-- Action button -->
+        <div class="mt-4">
+          {{if $c.IsOpen}}
+            <a href="/course/{{$c.ID}}/learn" class="block w-full text-center bg-emerald-600 text-white py-2 rounded-lg text-sm font-semibold hover:bg-emerald-700 transition">
+              {{ T $.Lang "modal.start_open" }}
+            </a>
+          {{else if eq $enroll "approved"}}
+            <a href="/course/{{$c.ID}}/learn" class="block w-full text-center bg-indigo-600 text-white py-2 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition">
+              {{ T $.Lang "modal.go_to_course" }}
+            </a>
+          {{else if eq $enroll "pending"}}
+            <button disabled class="w-full bg-yellow-50 text-yellow-700 border border-yellow-200 py-2 rounded-lg text-sm font-semibold cursor-not-allowed">
+              <i class="fas fa-clock mr-1"></i> {{ T $.Lang "modal.pending" }}
+            </button>
+          {{else if $.IsAuthenticated}}
+            <button onclick="enroll({{$c.ID}}, this)" class="w-full bg-slate-800 text-white py-2 rounded-lg text-sm font-semibold hover:bg-black transition">
+              {{ T $.Lang "modal.apply" }}
+            </button>
+          {{else}}
+            <a href="/auth/google/login" class="block w-full text-center bg-slate-800 text-white py-2 rounded-lg text-sm font-semibold hover:bg-black transition">
+              {{ T $.Lang "modal.login_to_enroll" }}
+            </a>
+          {{end}}
+        </div>
+      </div>
+    </div>
+    {{end}}
+  </div>
+  {{else}}
+  <div class="text-center py-20 text-slate-400">
+    <i class="fas fa-chalkboard-teacher text-5xl mb-4 text-slate-200"></i>
+    <p>{{ T .Lang "userprofile.no_courses" }}</p>
+  </div>
+  {{end}}
+
+  {{else}}
+  <div class="text-center py-20 text-slate-400">
+    <i class="fas fa-user-slash text-5xl mb-4 text-slate-200"></i>
+    <p>{{ T .Lang "userprofile.not_found" }}</p>
+  </div>
+  {{end}}
+
+</main>
+
+<script>
+async function enroll(courseID, btn) {
+  btn.disabled = true;
+  btn.textContent = t('modal.applied');
+  const res = await fetch('/api/enroll', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ course_id: courseID })
+  });
+  if (res.ok) {
+    btn.classList.remove('bg-slate-800','hover:bg-black');
+    btn.classList.add('bg-yellow-50','text-yellow-700','border','border-yellow-200','cursor-not-allowed');
+    btn.innerHTML = `<i class="fas fa-clock mr-1"></i>${t('modal.pending')}`;
+  } else {
+    const e = await res.json();
+    btn.disabled = false;
+    btn.textContent = t('modal.apply');
+    alert(e.error || t('modal.apply_error'));
+  }
+}
+</script>
+
+{{template "footer" .}}
+</body>
+</html>
+{{end}}
