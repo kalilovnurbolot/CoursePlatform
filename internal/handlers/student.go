@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -258,9 +260,59 @@ func (s *Handler) HandleLessonView(w http.ResponseWriter, r *http.Request) {
 	s.Tmpl.ExecuteTemplate(w, "lessonView", data)
 }
 
+// issueCertificateIfComplete проверяет 100% прогресс и выдаёт сертификат если ещё не выдан.
+func (s *Handler) issueCertificateIfComplete(userID, courseID uint) {
+	var totalLessons int64
+	s.DB.Model(&models.Lesson{}).
+		Joins("JOIN modules ON modules.id = lessons.module_id").
+		Where("modules.course_id = ? AND lessons.deleted_at IS NULL AND modules.deleted_at IS NULL", courseID).
+		Count(&totalLessons)
+
+	if totalLessons == 0 {
+		return
+	}
+
+	var doneLessons int64
+	s.DB.Model(&models.LessonProgress{}).
+		Where("user_id = ? AND course_id = ? AND is_done = ?", userID, courseID, true).
+		Count(&doneLessons)
+
+	if doneLessons < totalLessons {
+		return
+	}
+
+	// Не выдавать повторно
+	var existing models.Certificate
+	if s.DB.Where("user_id = ? AND course_id = ?", userID, courseID).First(&existing).Error == nil {
+		return
+	}
+
+	b := make([]byte, 16)
+	if _, err := rand.Read(b); err != nil {
+		log.Printf("issueCertificate rand: %v", err)
+		return
+	}
+
+	cert := models.Certificate{
+		UserID:   userID,
+		CourseID: courseID,
+		Code:     hex.EncodeToString(b),
+		IssuedAt: time.Now(),
+	}
+	if err := s.DB.Create(&cert).Error; err != nil {
+		log.Printf("issueCertificate create: %v", err)
+		return
+	}
+
+	var course models.Course
+	s.DB.Select("title").First(&course, courseID)
+	s.logAction(userID, models.LogCourseComplete, course.Title, courseID, 0)
+}
+
 // SaveQuizAttemptAPI — Сохранение ответа СРАЗУ (POST /api/course/{id}/lesson/{lesson_id}/quiz)
 func (s *Handler) SaveQuizAttemptAPI(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
+	courseID, _ := strconv.ParseUint(vars["id"], 10, 32)
 	lessonID, _ := strconv.ParseUint(vars["lesson_id"], 10, 32)
 	_, userID := s.GetUserRoleID(r)
 
@@ -326,6 +378,8 @@ func (s *Handler) SaveQuizAttemptAPI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	s.logAction(userID, models.LogQuizAttempt, req.Question, uint(courseID), uint(lessonID))
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"status":     "saved",
@@ -343,5 +397,12 @@ func (s *Handler) MarkLessonReadAPI(w http.ResponseWriter, r *http.Request) {
 	s.DB.Where("user_id = ? AND lesson_id = ?", userID, lessonID).
 		Assign(models.LessonProgress{IsDone: true, UpdatedAt: time.Now()}).
 		FirstOrCreate(&models.LessonProgress{UserID: userID, LessonID: uint(lessonID), CourseID: uint(courseID)})
+
+	var lesson models.Lesson
+	s.DB.Select("title").First(&lesson, lessonID)
+	s.logAction(userID, models.LogLessonView, lesson.Title, uint(courseID), uint(lessonID))
+
+	s.issueCertificateIfComplete(userID, uint(courseID))
+
 	w.WriteHeader(http.StatusOK)
 }

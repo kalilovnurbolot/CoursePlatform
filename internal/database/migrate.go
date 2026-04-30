@@ -16,7 +16,9 @@ func AutoMigrate(db *gorm.DB) error {
 		&models.Enrollment{},
 		&models.LessonProgress{},
 		&models.QuizAttempt{},
-		&models.Comment{}, // <--- NEW
-		&models.Review{},  // <--- NEW
+		&models.Comment{},
+		&models.Review{},
+		&models.Certificate{},
+		&models.UserLog{},
 	)
 }

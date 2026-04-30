@@ -1,0 +1,397 @@
+{{define "cabinet.html"}}
+<!DOCTYPE html>
+<html lang="{{.Lang}}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ T .Lang "cabinet.title" }} | {{.UserName}}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .tab-btn.active { border-color: #4f46e5; color: #4f46e5; background: #eef2ff; }
+        .card-hover:hover { transform: translateY(-3px); box-shadow: 0 10px 25px -5px rgba(0,0,0,0.08); }
+    </style>
+    <script>const I18N = {{.TransJSON}};</script>
+    <script>function t(k){return I18N[k]||k;}</script>
+</head>
+<body class="text-slate-800">
+
+{{template "headerPersonal" .}}
+
+<main class="max-w-6xl mx-auto py-10 px-4 sm:px-6 lg:px-8 space-y-8">
+
+    <!-- ===== ПРОФИЛЬ ===== -->
+    <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+        <div class="bg-gradient-to-r from-indigo-600 to-purple-600 h-20"></div>
+        <div class="px-6 pb-6">
+            <div class="flex flex-col sm:flex-row items-start sm:items-end gap-4 -mt-10">
+                <div class="relative">
+                    <img src="{{.UserPictureURL}}" class="w-20 h-20 rounded-full border-4 border-white shadow-md object-cover">
+                    <div class="absolute bottom-1 right-1 w-4 h-4 bg-green-400 border-2 border-white rounded-full"></div>
+                </div>
+                <div class="flex-1 pt-2">
+                    <h1 class="text-xl font-bold text-slate-900">{{.UserName}}</h1>
+                    <p class="text-sm text-slate-500">{{.Email}}</p>
+                    <div class="mt-1 flex flex-wrap gap-2">
+                        {{if eq .RoleID 2}}
+                            <span class="px-2 py-0.5 bg-purple-100 text-purple-700 text-xs font-bold rounded-full uppercase">{{ T .Lang "profile.admin" }}</span>
+                        {{else}}
+                            <span class="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-bold rounded-full uppercase">{{ T .Lang "profile.student" }}</span>
+                        {{end}}
+                    </div>
+                </div>
+                <div class="flex gap-2 mt-2 sm:mt-0">
+                    <a href="/personal" class="px-4 py-2 border border-slate-200 text-slate-600 text-sm font-medium rounded-xl hover:bg-slate-50 transition flex items-center gap-1.5">
+                        <i class="fas fa-cog text-xs"></i> {{ T .Lang "nav.settings" }}
+                    </a>
+                    <a href="/logout" class="px-4 py-2 border border-red-100 text-red-500 text-sm font-medium rounded-xl hover:bg-red-50 transition flex items-center gap-1.5">
+                        <i class="fas fa-sign-out-alt text-xs"></i> {{ T .Lang "nav.logout" }}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== СТАТИСТИКА ===== -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+            <div class="flex items-center justify-between mb-3">
+                <div class="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-book text-indigo-600"></i>
+                </div>
+            </div>
+            <p class="text-3xl font-bold text-slate-900">{{.Cabinet.Stats.EnrolledCount}}</p>
+            <p class="text-xs text-slate-500 mt-1 font-medium">{{ T .Lang "cabinet.stats_enrolled" }}</p>
+        </div>
+        <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+            <div class="flex items-center justify-between mb-3">
+                <div class="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-trophy text-green-600"></i>
+                </div>
+            </div>
+            <p class="text-3xl font-bold text-slate-900">{{.Cabinet.Stats.CompletedCount}}</p>
+            <p class="text-xs text-slate-500 mt-1 font-medium">{{ T .Lang "cabinet.stats_completed" }}</p>
+        </div>
+        <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+            <div class="flex items-center justify-between mb-3">
+                <div class="w-10 h-10 bg-sky-100 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-check-circle text-sky-600"></i>
+                </div>
+            </div>
+            <p class="text-3xl font-bold text-slate-900">{{.Cabinet.Stats.LessonsDone}}</p>
+            <p class="text-xs text-slate-500 mt-1 font-medium">{{ T .Lang "cabinet.stats_lessons" }}</p>
+        </div>
+        <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+            <div class="flex items-center justify-between mb-3">
+                <div class="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-star text-amber-500"></i>
+                </div>
+            </div>
+            <p class="text-3xl font-bold text-slate-900">{{.Cabinet.Stats.QuizAccuracy}}<span class="text-lg text-slate-400">%</span></p>
+            <p class="text-xs text-slate-500 mt-1 font-medium">{{ T .Lang "cabinet.stats_quiz" }}</p>
+        </div>
+    </div>
+
+    <!-- ===== МОЁ ОБУЧЕНИЕ ===== -->
+    <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+        <div class="px-6 pt-6 pb-0 border-b border-slate-100">
+            <h2 class="text-lg font-bold text-slate-900 mb-4">{{ T .Lang "cabinet.learning_title" }}</h2>
+            <div class="flex gap-1">
+                <button id="btn-in_progress" onclick="showTab('in_progress')"
+                    class="tab-btn active px-4 py-2 text-sm font-semibold rounded-t-xl border-b-2 border-transparent transition">
+                    {{ T .Lang "cabinet.tab_in_progress" }}
+                    {{if .Cabinet.InProgress}}<span class="ml-1.5 bg-indigo-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{{len .Cabinet.InProgress}}</span>{{end}}
+                </button>
+                <button id="btn-completed" onclick="showTab('completed')"
+                    class="tab-btn px-4 py-2 text-sm font-semibold rounded-t-xl border-b-2 border-transparent text-slate-500 hover:text-slate-700 transition">
+                    {{ T .Lang "cabinet.tab_completed" }}
+                    {{if .Cabinet.Completed}}<span class="ml-1.5 bg-green-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{{len .Cabinet.Completed}}</span>{{end}}
+                </button>
+                <button id="btn-pending" onclick="showTab('pending')"
+                    class="tab-btn px-4 py-2 text-sm font-semibold rounded-t-xl border-b-2 border-transparent text-slate-500 hover:text-slate-700 transition">
+                    {{ T .Lang "cabinet.tab_pending" }}
+                    {{if .Cabinet.Pending}}<span class="ml-1.5 bg-amber-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{{len .Cabinet.Pending}}</span>{{end}}
+                </button>
+            </div>
+        </div>
+
+        <!-- Вкладка: В процессе -->
+        <div id="tab-in_progress" class="p-6">
+            {{if .Cabinet.InProgress}}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {{range .Cabinet.InProgress}}
+                <div class="border border-slate-100 rounded-xl p-4 card-hover transition-all duration-200 flex gap-4">
+                    <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex-shrink-0 flex items-center justify-center overflow-hidden">
+                        {{if .Enrollment.Course.ImageURL}}
+                            <img src="{{.Enrollment.Course.ImageURL}}" class="w-full h-full object-cover">
+                        {{else}}
+                            <span class="text-white font-bold text-xl">{{slice .Enrollment.Course.Title 0 1}}</span>
+                        {{end}}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h3 class="font-semibold text-slate-900 text-sm leading-snug truncate">{{.Enrollment.Course.Title}}</h3>
+                        <p class="text-xs text-slate-400 mt-0.5">{{.Enrollment.Course.Author.Name}}</p>
+                        <div class="mt-2">
+                            <div class="flex justify-between text-[11px] text-slate-500 mb-1">
+                                <span>{{.DoneLessons}}/{{.TotalLessons}} уроков</span>
+                                <span class="font-bold text-indigo-600">{{.ProgressPercent}}%</span>
+                            </div>
+                            <div class="w-full bg-slate-100 rounded-full h-1.5">
+                                <div class="bg-indigo-500 h-1.5 rounded-full transition-all" style="width: {{.ProgressPercent}}%"></div>
+                            </div>
+                        </div>
+                        <a href="/course/{{.Enrollment.CourseID}}/learn" class="mt-3 inline-block text-xs font-bold text-indigo-600 hover:text-indigo-800 transition">
+                            {{ T $.Lang "dashboard.continue" }} →
+                        </a>
+                    </div>
+                </div>
+                {{end}}
+            </div>
+            {{else}}
+            <div class="text-center py-12">
+                <div class="w-14 h-14 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl text-slate-300">
+                    <i class="fas fa-book-open"></i>
+                </div>
+                <p class="text-slate-500 text-sm">{{ T .Lang "cabinet.no_in_progress" }}</p>
+                <a href="/" class="mt-3 inline-block text-sm font-semibold text-indigo-600 hover:underline">{{ T .Lang "cabinet.go_catalog" }}</a>
+            </div>
+            {{end}}
+        </div>
+
+        <!-- Вкладка: Завершённые -->
+        <div id="tab-completed" class="p-6 hidden">
+            {{if .Cabinet.Completed}}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {{range .Cabinet.Completed}}
+                <div class="border border-green-100 bg-green-50/30 rounded-xl p-4 card-hover transition-all duration-200 flex gap-4">
+                    <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-green-400 to-emerald-600 flex-shrink-0 flex items-center justify-center overflow-hidden">
+                        {{if .Enrollment.Course.ImageURL}}
+                            <img src="{{.Enrollment.Course.ImageURL}}" class="w-full h-full object-cover">
+                        {{else}}
+                            <span class="text-white font-bold text-xl">{{slice .Enrollment.Course.Title 0 1}}</span>
+                        {{end}}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2">
+                            <h3 class="font-semibold text-slate-900 text-sm leading-snug truncate">{{.Enrollment.Course.Title}}</h3>
+                            <i class="fas fa-check-circle text-green-500 text-xs flex-shrink-0"></i>
+                        </div>
+                        <p class="text-xs text-slate-400 mt-0.5">{{.Enrollment.Course.Author.Name}}</p>
+                        <div class="mt-2">
+                            <div class="w-full bg-green-100 rounded-full h-1.5">
+                                <div class="bg-green-500 h-1.5 rounded-full" style="width: 100%"></div>
+                            </div>
+                        </div>
+                        <a href="/course/{{.Enrollment.CourseID}}/learn" class="mt-3 inline-block text-xs font-bold text-green-700 hover:text-green-900 transition">
+                            {{ T $.Lang "dashboard.repeat" }} →
+                        </a>
+                    </div>
+                </div>
+                {{end}}
+            </div>
+            {{else}}
+            <div class="text-center py-12">
+                <div class="w-14 h-14 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl text-slate-300">
+                    <i class="fas fa-trophy"></i>
+                </div>
+                <p class="text-slate-500 text-sm">{{ T .Lang "cabinet.no_completed" }}</p>
+            </div>
+            {{end}}
+        </div>
+
+        <!-- Вкладка: Ожидают -->
+        <div id="tab-pending" class="p-6 hidden">
+            {{if .Cabinet.Pending}}
+            <div class="space-y-3">
+                {{range .Cabinet.Pending}}
+                <div class="flex items-center justify-between border border-slate-100 rounded-xl px-4 py-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-400 to-slate-600 flex-shrink-0 flex items-center justify-center overflow-hidden">
+                            {{if .Course.ImageURL}}
+                                <img src="{{.Course.ImageURL}}" class="w-full h-full object-cover">
+                            {{else}}
+                                <span class="text-white font-bold">{{slice .Course.Title 0 1}}</span>
+                            {{end}}
+                        </div>
+                        <div>
+                            <p class="font-semibold text-sm text-slate-900">{{.Course.Title}}</p>
+                            <p class="text-xs text-slate-400">{{.Course.Author.Name}}</p>
+                        </div>
+                    </div>
+                    {{if eq .Status "pending"}}
+                        <span class="px-2.5 py-1 bg-amber-100 text-amber-700 text-[11px] font-bold rounded-full">{{ T $.Lang "cabinet.pending_badge" }}</span>
+                    {{else}}
+                        <span class="px-2.5 py-1 bg-red-100 text-red-700 text-[11px] font-bold rounded-full">{{ T $.Lang "cabinet.rejected_badge" }}</span>
+                    {{end}}
+                </div>
+                {{end}}
+            </div>
+            {{else}}
+            <div class="text-center py-12">
+                <p class="text-slate-500 text-sm">{{ T .Lang "cabinet.no_pending" }}</p>
+            </div>
+            {{end}}
+        </div>
+    </div>
+
+    <!-- ===== МОИ КУРСЫ КАК АВТОР ===== -->
+    {{if .Cabinet.AuthoredCourses}}
+    <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+        <div class="flex items-center justify-between mb-5">
+            <h2 class="text-lg font-bold text-slate-900">{{ T .Lang "cabinet.authored_title" }}</h2>
+            {{if eq .RoleID 2}}
+            <a href="/admin/courses" class="text-sm text-indigo-600 font-semibold hover:underline">
+                {{ T .Lang "cabinet.manage_link" }} →
+            </a>
+            {{end}}
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {{range .Cabinet.AuthoredCourses}}
+            <div class="border border-slate-100 rounded-xl p-4 flex gap-4 card-hover transition-all duration-200">
+                <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 flex-shrink-0 flex items-center justify-center overflow-hidden">
+                    {{if .Course.ImageURL}}
+                        <img src="{{.Course.ImageURL}}" class="w-full h-full object-cover">
+                    {{else}}
+                        <span class="text-white font-bold text-xl">{{slice .Course.Title 0 1}}</span>
+                    {{end}}
+                </div>
+                <div class="flex-1 min-w-0">
+                    <h3 class="font-semibold text-sm text-slate-900 truncate">{{.Course.Title}}</h3>
+                    <div class="flex items-center gap-3 mt-1.5 text-xs text-slate-500">
+                        <span><i class="fas fa-users mr-1"></i>{{.StudentCount}} {{ T $.Lang "cabinet.authored_students" }}</span>
+                        <span><i class="fas fa-star mr-1 text-amber-400"></i>{{printf "%.1f" .AvgRating}}</span>
+                        {{if .Course.IsPublished}}
+                            <span class="px-1.5 py-0.5 bg-green-100 text-green-700 text-[10px] font-bold rounded">ОПУБЛиКОВАН</span>
+                        {{else}}
+                            <span class="px-1.5 py-0.5 bg-slate-100 text-slate-500 text-[10px] font-bold rounded">ЧЕРНОВИК</span>
+                        {{end}}
+                    </div>
+                </div>
+            </div>
+            {{end}}
+        </div>
+    </div>
+    {{end}}
+
+    <!-- ===== НИЖНЯЯ СЕТКА: АКТИВНОСТЬ + СЕРТИФИКАТЫ + ОТЗЫВЫ ===== -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+        <!-- Активность -->
+        <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+            <h2 class="text-base font-bold text-slate-900 mb-4">{{ T .Lang "cabinet.activity_title" }}</h2>
+            {{if .Cabinet.Activity}}
+            <ul class="space-y-3">
+                {{range .Cabinet.Activity}}
+                <li class="flex items-start gap-3">
+                    <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5
+                        {{if eq .Action "login"}}bg-blue-50{{else if eq .Action "lesson_view"}}bg-indigo-50{{else if eq .Action "quiz_attempt"}}bg-amber-50{{else if eq .Action "course_complete"}}bg-yellow-50{{else}}bg-slate-50{{end}}">
+                        {{if eq .Action "login"}}
+                            <i class="fas fa-sign-in-alt text-xs text-blue-500"></i>
+                        {{else if eq .Action "lesson_view"}}
+                            <i class="fas fa-book-open text-xs text-indigo-500"></i>
+                        {{else if eq .Action "quiz_attempt"}}
+                            <i class="fas fa-question-circle text-xs text-amber-500"></i>
+                        {{else if eq .Action "course_complete"}}
+                            <i class="fas fa-trophy text-xs text-yellow-500"></i>
+                        {{else if eq .Action "review_added"}}
+                            <i class="fas fa-star text-xs text-orange-400"></i>
+                        {{else}}
+                            <i class="fas fa-circle text-xs text-slate-400"></i>
+                        {{end}}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm text-slate-700 leading-snug">{{.Details}}</p>
+                        <p class="text-xs text-slate-400 mt-0.5">{{.CreatedAt.Format "02.01.2006 в 15:04"}}</p>
+                    </div>
+                </li>
+                {{end}}
+            </ul>
+            {{else}}
+            <div class="text-center py-8 text-slate-400">
+                <i class="fas fa-history text-3xl mb-2"></i>
+                <p class="text-sm">{{ T .Lang "cabinet.no_activity" }}</p>
+            </div>
+            {{end}}
+        </div>
+
+        <!-- Сертификаты -->
+        <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+            <h2 class="text-base font-bold text-slate-900 mb-4">{{ T .Lang "cabinet.certs_title" }}</h2>
+            {{if .Cabinet.Certificates}}
+            <ul class="space-y-3">
+                {{range .Cabinet.Certificates}}
+                <li class="flex items-center gap-3 border border-yellow-100 bg-yellow-50/40 rounded-xl px-4 py-3">
+                    <div class="w-10 h-10 bg-yellow-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-certificate text-yellow-500"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-semibold text-slate-900 truncate">{{.Course.Title}}</p>
+                        <p class="text-xs text-slate-500">{{ T $.Lang "cabinet.cert_issued" }}: {{.IssuedAt.Format "02.01.2006"}}</p>
+                    </div>
+                    <a href="/certificate/{{.Code}}" target="_blank"
+                        class="flex-shrink-0 text-xs font-bold text-indigo-600 hover:underline">
+                        {{ T $.Lang "cabinet.cert_verify" }}
+                    </a>
+                </li>
+                {{end}}
+            </ul>
+            {{else}}
+            <div class="text-center py-8 text-slate-400">
+                <i class="fas fa-certificate text-3xl mb-2"></i>
+                <p class="text-sm">{{ T .Lang "cabinet.no_certs" }}</p>
+            </div>
+            {{end}}
+        </div>
+    </div>
+
+    <!-- ===== МОИ ОТЗЫВЫ ===== -->
+    <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+        <h2 class="text-base font-bold text-slate-900 mb-4">{{ T .Lang "cabinet.reviews_title" }}</h2>
+        {{if .Cabinet.Reviews}}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {{range .Cabinet.Reviews}}
+            <div class="border border-slate-100 rounded-xl p-4">
+                <div class="flex items-center justify-between mb-2">
+                    <p class="text-sm font-semibold text-slate-900">{{.Course.Title}}</p>
+                    <span class="text-amber-400 text-sm">
+                        {{if ge .Rating 1}}<i class="fas fa-star"></i>{{else}}<i class="far fa-star"></i>{{end}}
+                        {{if ge .Rating 2}}<i class="fas fa-star"></i>{{else}}<i class="far fa-star"></i>{{end}}
+                        {{if ge .Rating 3}}<i class="fas fa-star"></i>{{else}}<i class="far fa-star"></i>{{end}}
+                        {{if ge .Rating 4}}<i class="fas fa-star"></i>{{else}}<i class="far fa-star"></i>{{end}}
+                        {{if ge .Rating 5}}<i class="fas fa-star"></i>{{else}}<i class="far fa-star"></i>{{end}}
+                    </span>
+                </div>
+                {{if .Content}}
+                <p class="text-sm text-slate-600 leading-relaxed">{{.Content}}</p>
+                {{end}}
+                <p class="text-xs text-slate-400 mt-2">{{.CreatedAt.Format "02.01.2006"}}</p>
+            </div>
+            {{end}}
+        </div>
+        {{else}}
+        <div class="text-center py-10 text-slate-400">
+            <i class="fas fa-star text-3xl mb-2"></i>
+            <p class="text-sm">{{ T .Lang "cabinet.no_reviews" }}</p>
+        </div>
+        {{end}}
+    </div>
+
+</main>
+
+{{template "footer" .}}
+
+<script>
+function showTab(name) {
+    ['in_progress', 'completed', 'pending'].forEach(tab => {
+        document.getElementById('tab-' + tab).classList.toggle('hidden', tab !== name);
+        const btn = document.getElementById('btn-' + tab);
+        btn.classList.toggle('active', tab === name);
+        btn.classList.toggle('text-slate-500', tab !== name);
+    });
+}
+</script>
+</body>
+</html>
+{{end}}

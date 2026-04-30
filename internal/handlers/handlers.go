@@ -89,6 +89,9 @@ type PageData struct {
 
 	IsCourseOpen bool
 	IsLessonFree bool
+
+	Cabinet     CabinetData
+	Certificate models.Certificate
 }
 
 // DetectLang resolves the best language for a request.
@@ -225,6 +228,20 @@ func toString(v interface{}) string {
 	return s
 }
 
+// logAction записывает действие пользователя в таблицу user_logs.
+func (h *Handler) logAction(userID uint, action, details string, courseID, lessonID uint) {
+	entry := models.UserLog{
+		UserID:   userID,
+		Action:   action,
+		Details:  details,
+		CourseID: courseID,
+		LessonID: lessonID,
+	}
+	if err := h.DB.Create(&entry).Error; err != nil {
+		log.Printf("logAction: %v", err)
+	}
+}
+
 func (h *Handler) HandleAdmin(w http.ResponseWriter, r *http.Request) {}
 
 func (h *Handler) HandleProfile(w http.ResponseWriter, r *http.Request) {
@@ -327,6 +344,8 @@ func (h *Handler) HandleGoogleCallback(w http.ResponseWriter, r *http.Request) {
 		MaxAge:   86400 * 7,
 	}
 	session.Save(r, w)
+
+	h.logAction(userID, models.LogLogin, "Вход через Google", 0, 0)
 
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }

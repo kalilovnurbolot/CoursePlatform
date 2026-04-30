@@ -11,11 +11,11 @@
                 </a>
                 {{if .IsAuthenticated}}
                 <div class="hidden sm:ml-8 sm:flex sm:space-x-8">
-                    <a href="/my-courses" class="border-transparent text-slate-500 hover:border-indigo-500 hover:text-indigo-600 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition">
+                    <a href="/my-courses" class="border-transparent text-slate-500 hover:border-indigo-500 hover:text-indigo-600 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition {{if eq .CurrentPath "/my-courses"}}border-indigo-500 text-indigo-600{{end}}">
                         {{ T .Lang "nav.my_courses" }}
                     </a>
-                    <a href="/personal" class="border-transparent text-slate-500 hover:border-indigo-500 hover:text-indigo-600 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition">
-                        {{ T .Lang "nav.profile" }}
+                    <a href="/cabinet" class="border-transparent text-slate-500 hover:border-indigo-500 hover:text-indigo-600 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition {{if eq .CurrentPath "/cabinet"}}border-indigo-500 text-indigo-600{{end}}">
+                        {{ T .Lang "cabinet.title" }}
                     </a>
                 </div>
                 {{end}}
@@ -47,9 +47,20 @@
                         <span class="text-sm font-medium text-slate-700 hidden sm:block">{{.UserName}}</span>
                         <img class="h-8 w-8 rounded-full object-cover border border-slate-200" src="{{.UserPictureURL}}" alt="">
                     </button>
-                    <div id="user-menu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-slate-100 py-1 ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
-                        <a href="/personal" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">{{ T .Lang "nav.settings" }}</a>
-                        <a href="/logout" class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50">{{ T .Lang "nav.logout" }}</a>
+                    <div id="user-menu" class="hidden absolute right-0 mt-2 w-52 bg-white rounded-xl shadow-lg border border-slate-100 py-1 ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
+                        <a href="/cabinet" class="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                            <i class="fas fa-th-large text-xs text-slate-400 w-4"></i>{{ T .Lang "cabinet.title" }}
+                        </a>
+                        <a href="/my-courses" class="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                            <i class="fas fa-book-open text-xs text-slate-400 w-4"></i>{{ T .Lang "nav.my_courses" }}
+                        </a>
+                        <a href="/personal" class="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                            <i class="fas fa-cog text-xs text-slate-400 w-4"></i>{{ T .Lang "nav.settings" }}
+                        </a>
+                        <div class="border-t border-slate-100 my-1"></div>
+                        <a href="/logout" class="flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50">
+                            <i class="fas fa-sign-out-alt text-xs w-4"></i>{{ T .Lang "nav.logout" }}
+                        </a>
                     </div>
                 </div>
                 {{else}}

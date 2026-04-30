@@ -82,6 +82,8 @@ func main() {
 	r.HandleFunc("/logout", h.HandleLogout).Methods("GET", "POST")
 
 	r.HandleFunc("/personal", h.HandleProfile).Methods("GET")
+	r.HandleFunc("/cabinet", userMiddleware(h.HandleCabinet)).Methods("GET")
+	r.HandleFunc("/certificate/{code}", h.HandleVerifyCertificate).Methods("GET")
 
 	// Admin pages
 	r.HandleFunc("/admin/dashboard", adminMiddleware(adminService.HandleAdminPage)).Methods("GET")
