@@ -255,12 +255,7 @@
             </div>
         </div>
 
-        <div id="load-more-container" class="text-center mt-10 pb-4 hidden">
-            <button id="load-more-btn"
-                    class="px-8 py-3.5 border-2 border-slate-200 text-slate-600 rounded-2xl font-semibold text-sm hover:border-indigo-500 hover:text-indigo-600 hover:bg-indigo-50 transition-all duration-200">
-                {{ T .Lang "home.load_more" }}
-            </button>
-        </div>
+        <div id="pagination-container" class="mt-10 pb-6"></div>
     </div>
 </section>
 
@@ -397,63 +392,71 @@
 
     // ── Color pool ───────────────────────────────────────────────────────────
     const colorPool = [
-        'from-purple-500 to-indigo-600',
-        'from-emerald-400 to-teal-600',
-        'from-pink-500 to-rose-600',
-        'from-amber-400 to-orange-500',
-        'from-sky-400 to-blue-600',
-        'from-violet-500 to-purple-700',
-        'from-green-400 to-cyan-500',
-        'from-red-400 to-pink-600',
+        'from-purple-500 to-indigo-600', 'from-emerald-400 to-teal-600',
+        'from-pink-500 to-rose-600',     'from-amber-400 to-orange-500',
+        'from-sky-400 to-blue-600',      'from-violet-500 to-purple-700',
+        'from-green-400 to-cyan-500',    'from-red-400 to-pink-600',
     ];
 
     // ── Modal refs ───────────────────────────────────────────────────────────
-    const overlay  = document.getElementById('course-modal-overlay');
-    const panel    = document.getElementById('course-modal-panel');
-    const mLoader  = document.getElementById('modal-loader');
+    const overlay   = document.getElementById('course-modal-overlay');
+    const panel     = document.getElementById('course-modal-panel');
+    const mLoader   = document.getElementById('modal-loader');
     const mSyllabus = document.getElementById('modal-syllabus');
     let currentCourseId = null;
 
     // ── State ────────────────────────────────────────────────────────────────
-    let allCourses      = [];
-    let currentFiltered = [];
-    let activeFilter    = 'all';
-    let searchQuery     = '';
-    let sortBy          = 'newest';
-    let visibleCount    = 8;
-    const PAGE_SIZE     = 8;
+    let state = { search: '', filter: 'all', sort: 'newest', page: 1, totalPages: 1 };
     let searchTimeout   = null;
+    let reviewsRendered = false;
+    let statRendered    = false;
 
     // ── Init labels ──────────────────────────────────────────────────────────
-    document.getElementById('modal-overview-label').textContent  = t('modal.overview');
-    document.getElementById('modal-author-label').textContent    = t('modal.author');
-    document.getElementById('modal-syllabus-title').textContent  = t('modal.syllabus');
-    document.getElementById('modal-start-title').textContent     = t('modal.start_learning');
-    document.getElementById('modal-access-note').textContent     = t('modal.access_forever');
-    document.getElementById('lang-modal-title').textContent      = t('lang.modal_title');
-    document.getElementById('lang-modal-subtitle').textContent   = t('lang.modal_subtitle');
+    document.getElementById('modal-overview-label').textContent = t('modal.overview');
+    document.getElementById('modal-author-label').textContent   = t('modal.author');
+    document.getElementById('modal-syllabus-title').textContent = t('modal.syllabus');
+    document.getElementById('modal-start-title').textContent    = t('modal.start_learning');
+    document.getElementById('modal-access-note').textContent    = t('modal.access_forever');
+    document.getElementById('lang-modal-title').textContent     = t('lang.modal_title');
+    document.getElementById('lang-modal-subtitle').textContent  = t('lang.modal_subtitle');
 
-    // ── Boot ────────────────────────────────────────────────────────────────
+    // ── Boot ─────────────────────────────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', function () {
         document.querySelectorAll('.popular-tag').forEach(btn => {
             btn.addEventListener('click', () => quickSearch(btn.dataset.query));
         });
-        document.getElementById('load-more-btn').addEventListener('click', loadMore);
-        loadHomeData();
+        loadCourses();
         checkLanguagePreference();
     });
 
-    // ── Data loading ─────────────────────────────────────────────────────────
-    async function loadHomeData() {
+    // ── API fetch ─────────────────────────────────────────────────────────────
+    async function loadCourses() {
+        showSkeletons();
+        const params = new URLSearchParams();
+        if (state.search) params.set('search', state.search);
+        if (state.filter !== 'all') params.set('filter', state.filter);
+        if (state.sort !== 'newest') params.set('sort', state.sort);
+        if (state.page > 1) params.set('page', String(state.page));
+
         try {
-            const resp = await fetch('/api/home');
+            const resp = await fetch('/api/home?' + params.toString());
             if (!resp.ok) throw new Error('HTTP ' + resp.status);
             const data = await resp.json();
-            allCourses = data.courses || [];
-            renderReviews(data.reviews || []);
-            animateStat('stat-courses', allCourses.length);
-            updatePillCounts();
-            applyFilters();
+
+            updatePillCounts(data.counts);
+
+            if (!statRendered) {
+                animateStat('stat-courses', (data.counts && data.counts.all) || 0);
+                statRendered = true;
+            }
+            if (!reviewsRendered && data.reviews && data.reviews.length > 0) {
+                renderReviews(data.reviews);
+                reviewsRendered = true;
+            }
+
+            state.totalPages = data.total_pages || 1;
+            renderCourses(data.courses || [], data.total || 0);
+            renderPagination(data.page || 1, state.totalPages);
         } catch (e) {
             console.error(e);
             document.getElementById('courses-grid').innerHTML =
@@ -464,25 +467,40 @@
         }
     }
 
+    function showSkeletons() {
+        document.getElementById('courses-grid').innerHTML = `
+            <div class="bg-white rounded-2xl overflow-hidden border border-slate-100 animate-pulse">
+                <div class="bg-slate-200" style="padding-bottom:56.25%;height:0"></div>
+                <div class="p-4 space-y-2"><div class="h-3 bg-slate-200 rounded w-3/4"></div><div class="h-3 bg-slate-200 rounded w-1/2"></div><div class="h-2 bg-slate-100 rounded w-1/3 mt-3"></div></div>
+            </div>
+            <div class="bg-white rounded-2xl overflow-hidden border border-slate-100 animate-pulse">
+                <div class="bg-slate-200" style="padding-bottom:56.25%;height:0"></div>
+                <div class="p-4 space-y-2"><div class="h-3 bg-slate-200 rounded w-4/5"></div><div class="h-3 bg-slate-200 rounded w-2/5"></div><div class="h-2 bg-slate-100 rounded w-1/4 mt-3"></div></div>
+            </div>
+            <div class="bg-white rounded-2xl overflow-hidden border border-slate-100 animate-pulse hidden sm:block">
+                <div class="bg-slate-200" style="padding-bottom:56.25%;height:0"></div>
+                <div class="p-4 space-y-2"><div class="h-3 bg-slate-200 rounded w-2/3"></div><div class="h-3 bg-slate-200 rounded w-1/2"></div><div class="h-2 bg-slate-100 rounded w-2/5 mt-3"></div></div>
+            </div>
+            <div class="bg-white rounded-2xl overflow-hidden border border-slate-100 animate-pulse hidden lg:block">
+                <div class="bg-slate-200" style="padding-bottom:56.25%;height:0"></div>
+                <div class="p-4 space-y-2"><div class="h-3 bg-slate-200 rounded w-3/5"></div><div class="h-3 bg-slate-200 rounded w-2/5"></div><div class="h-2 bg-slate-100 rounded w-1/3 mt-3"></div></div>
+            </div>`;
+        document.getElementById('pagination-container').innerHTML = '';
+    }
+
     // ── Pill counts ───────────────────────────────────────────────────────────
-    function updatePillCounts() {
-        const counts = {
-            all:  allCourses.length,
-            open: allCourses.filter(c => c.is_open).length,
-            ru:   allCourses.filter(c => c.language === 'ru').length,
-            en:   allCourses.filter(c => c.language === 'en').length,
-            ky:   allCourses.filter(c => c.language === 'ky').length,
-        };
-        Object.entries(counts).forEach(([key, n]) => {
+    function updatePillCounts(counts) {
+        if (!counts) return;
+        ['all', 'open', 'ru', 'en', 'ky'].forEach(key => {
             const el = document.getElementById(`pill-count-${key}`);
-            if (el && n > 0) el.textContent = `(${n})`;
+            if (el) el.textContent = counts[key] > 0 ? `(${counts[key]})` : '';
         });
     }
 
     function animateStat(id, target) {
         const el = document.getElementById(id);
         if (!el) return;
-        if (target === 0) { el.textContent = '0'; return; }
+        if (!target) { el.textContent = '0'; return; }
         let cur = 0;
         const step = Math.max(1, Math.ceil(target / 30));
         const timer = setInterval(() => {
@@ -492,49 +510,50 @@
         }, 40);
     }
 
-    // ── Search / Filter ───────────────────────────────────────────────────────
+    // ── Search / Filter / Sort ────────────────────────────────────────────────
     function onSearchInput(val) {
         clearTimeout(searchTimeout);
         updateClearButton(val);
-        searchTimeout = setTimeout(() => { searchQuery = val; applyFilters(); }, 300);
+        searchTimeout = setTimeout(() => { state.search = val; state.page = 1; loadCourses(); }, 300);
     }
 
     function doSearch() {
         const inp = document.getElementById('hero-search');
-        searchQuery = inp ? inp.value : '';
-        updateClearButton(searchQuery);
-        applyFilters();
+        state.search = inp ? inp.value : '';
+        state.page = 1;
+        updateClearButton(state.search);
+        loadCourses();
         document.getElementById('courses').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
     function quickSearch(term) {
         const inp = document.getElementById('hero-search');
         if (inp) inp.value = term;
-        searchQuery = term;
+        state.search = term;
+        state.page = 1;
         updateClearButton(term);
-        applyFilters();
+        loadCourses();
         document.getElementById('courses').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
     function setFilter(filter) {
-        activeFilter = filter;
+        state.filter = filter;
+        state.page = 1;
         document.querySelectorAll('.filter-pill').forEach(p => {
             p.classList.toggle('active', p.dataset.filter === filter);
         });
-        applyFilters();
+        loadCourses();
     }
 
-    function setSort(val) {
-        sortBy = val;
-        applyFilters();
-    }
+    function setSort(val) { state.sort = val; state.page = 1; loadCourses(); }
 
     function clearSearch() {
         const inp = document.getElementById('hero-search');
         if (inp) inp.value = '';
-        searchQuery = '';
+        state.search = '';
+        state.page = 1;
         updateClearButton('');
-        applyFilters();
+        loadCourses();
     }
 
     function updateClearButton(val) {
@@ -546,77 +565,82 @@
         return (c.modules || []).reduce((s, m) => s + (m.lessons || []).length, 0);
     }
 
-    function applyFilters() {
-        const q = searchQuery.toLowerCase().trim();
-        currentFiltered = allCourses.filter(c => {
-            if (q) {
-                const titleOk  = (c.title  || '').toLowerCase().includes(q);
-                const authorOk = c.author && c.author.Name.toLowerCase().includes(q);
-                if (!titleOk && !authorOk) return false;
-            }
-            switch (activeFilter) {
-                case 'open': return c.is_open;
-                case 'ru':   return c.language === 'ru';
-                case 'en':   return c.language === 'en';
-                case 'ky':   return c.language === 'ky';
-            }
-            return true;
-        });
-
-        if (sortBy === 'az') {
-            currentFiltered.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
-        } else if (sortBy === 'lessons') {
-            currentFiltered.sort((a, b) => lessonCount(b) - lessonCount(a));
-        }
-
-        visibleCount = PAGE_SIZE;
-        renderFeatured();
-        renderFilteredCourses();
-    }
-
-    function loadMore() {
-        visibleCount += PAGE_SIZE;
-        renderFilteredCourses();
-    }
-
-    // ── Featured section ──────────────────────────────────────────────────────
-    function renderFeatured() {
-        const section = document.getElementById('featured-section');
-        const grid    = document.getElementById('featured-grid');
-        // Only show when no active search/filter
-        const isDefault = activeFilter === 'all' && !searchQuery.trim();
-        if (!isDefault || allCourses.length === 0) { section.classList.add('hidden'); return; }
-
-        section.classList.remove('hidden');
-        const top = allCourses.slice(0, 4);
-        grid.innerHTML = top.map((course, idx) => renderCourseCard(course, idx + 100)).join('');
-    }
-
-    function renderFilteredCourses() {
+    // ── Render courses + featured ─────────────────────────────────────────────
+    function renderCourses(courses, total) {
         const grid       = document.getElementById('courses-grid');
         const countLabel = document.getElementById('courses-count-label');
-        const lmCont     = document.getElementById('load-more-container');
+        countLabel.textContent = `${total} ${t('home.results_found')}`;
 
-        countLabel.textContent = `${currentFiltered.length} ${t('home.results_found')}`;
+        const isDefault = state.filter === 'all' && !state.search && state.page === 1;
+        const featuredSection = document.getElementById('featured-section');
+        const featuredGrid    = document.getElementById('featured-grid');
+        if (isDefault && courses.length > 0) {
+            featuredSection.classList.remove('hidden');
+            featuredGrid.innerHTML = courses.slice(0, 4).map((c, i) => renderCourseCard(c, i + 100)).join('');
+        } else {
+            featuredSection.classList.add('hidden');
+        }
+
         grid.innerHTML = '';
-
-        if (currentFiltered.length === 0) {
+        if (courses.length === 0) {
             grid.innerHTML = `
                 <div class="col-span-full flex flex-col items-center justify-center py-20 text-center">
                     <i class="fas fa-search text-5xl text-slate-200 mb-4"></i>
                     <p class="text-lg font-bold text-slate-700 mb-2">${t('home.no_results_title')}</p>
                     <p class="text-slate-400 text-sm mb-4">${t('home.no_results_desc')}</p>
-                    ${searchQuery ? `<button onclick="clearSearch()" class="text-indigo-600 text-sm font-semibold hover:underline">${t('home.clear_search')}</button>` : ''}
+                    ${state.search ? `<button onclick="clearSearch()" class="text-indigo-600 text-sm font-semibold hover:underline">${t('home.clear_search')}</button>` : ''}
                 </div>`;
-            lmCont.classList.add('hidden');
             return;
         }
+        courses.forEach((course, idx) => grid.insertAdjacentHTML('beforeend', renderCourseCard(course, idx)));
+    }
 
-        currentFiltered.slice(0, visibleCount).forEach((course, idx) => {
-            grid.insertAdjacentHTML('beforeend', renderCourseCard(course, idx));
+    // ── Pagination ────────────────────────────────────────────────────────────
+    function renderPagination(currentPage, totalPages) {
+        const container = document.getElementById('pagination-container');
+        if (!container || totalPages <= 1) { if (container) container.innerHTML = ''; return; }
+
+        const btnBase   = 'min-w-[2.25rem] h-9 px-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center justify-center';
+        const btnActive = 'bg-indigo-600 text-white shadow-sm shadow-indigo-200';
+        const btnNormal = 'text-slate-600 hover:bg-indigo-50 hover:text-indigo-600';
+        const btnNav    = 'px-3 h-9 rounded-lg border text-sm font-medium transition-all duration-150 flex items-center gap-1.5';
+        const btnNavOn  = 'border-slate-200 text-slate-600 hover:border-indigo-500 hover:text-indigo-600';
+        const btnNavOff = 'border-slate-100 text-slate-300 cursor-not-allowed';
+
+        let html = '<div class="flex items-center justify-center gap-1.5">';
+        html += `<button onclick="goToPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}
+            class="${btnNav} ${currentPage === 1 ? btnNavOff : btnNavOn}">
+            <i class="fas fa-chevron-left text-xs"></i><span class="hidden sm:inline">${t('home.page_prev')}</span>
+        </button>`;
+
+        getPageNumbers(currentPage, totalPages).forEach(p => {
+            if (p === '...') {
+                html += `<span class="px-1 text-slate-400 text-sm select-none">…</span>`;
+            } else {
+                html += `<button onclick="goToPage(${p})" class="${btnBase} ${p === currentPage ? btnActive : btnNormal}">${p}</button>`;
+            }
         });
 
-        lmCont.classList.toggle('hidden', currentFiltered.length <= visibleCount);
+        html += `<button onclick="goToPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}
+            class="${btnNav} ${currentPage === totalPages ? btnNavOff : btnNavOn}">
+            <span class="hidden sm:inline">${t('home.page_next')}</span><i class="fas fa-chevron-right text-xs"></i>
+        </button>`;
+        html += '</div>';
+        container.innerHTML = html;
+    }
+
+    function getPageNumbers(current, total) {
+        if (total <= 7) return Array.from({length: total}, (_, i) => i + 1);
+        if (current <= 4) return [1, 2, 3, 4, 5, '...', total];
+        if (current >= total - 3) return [1, '...', total - 4, total - 3, total - 2, total - 1, total];
+        return [1, '...', current - 1, current, current + 1, '...', total];
+    }
+
+    function goToPage(page) {
+        if (page < 1 || page > state.totalPages) return;
+        state.page = page;
+        loadCourses();
+        document.getElementById('courses').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
     // ── Course card ───────────────────────────────────────────────────────────
@@ -653,8 +677,6 @@
                  data-title="${escapeAttr(course.title || '')}"
                  data-author="${escapeAttr(authorName)}"
                  data-author-img="${escapeAttr(authorImg)}">
-
-                <!-- Cover: 16:9 -->
                 <div class="relative bg-gradient-to-br ${color} flex items-center justify-center overflow-hidden" style="padding-bottom:56.25%;height:0">
                     <div class="absolute inset-0 flex items-center justify-center">${cover}</div>
                     <div class="absolute inset-0 bg-black/0 group-hover:bg-black/35 transition-colors duration-300 flex items-center justify-center">
@@ -664,8 +686,6 @@
                     </div>
                     ${badges}
                 </div>
-
-                <!-- Body -->
                 <div class="p-4 flex flex-col flex-1">
                     <h3 class="font-bold text-slate-900 text-sm leading-snug mb-2 line-clamp-2 group-hover:text-indigo-600 transition-colors">
                         ${escapeHtml(course.title || '')}
@@ -718,13 +738,13 @@
     }
 
     async function openModal(element) {
-        const id       = element.getAttribute('data-id');
-        const title    = element.getAttribute('data-title');
-        const author   = element.getAttribute('data-author');
+        const id        = element.getAttribute('data-id');
+        const title     = element.getAttribute('data-title');
+        const author    = element.getAttribute('data-author');
         const authorImg = element.getAttribute('data-author-img');
         currentCourseId = id;
 
-        document.getElementById('modal-title').textContent      = title;
+        document.getElementById('modal-title').textContent       = title;
         document.getElementById('modal-author-name').textContent = author;
         document.getElementById('modal-author-img').src          = authorImg;
         document.getElementById('modal-desc').textContent        = t('modal.desc_loading');
@@ -743,9 +763,9 @@
         try {
             const resp = await fetch(`/api/courses/${id}/structure`);
             if (!resp.ok) throw new Error('Network error');
-            const data    = await resp.json();
-            const course  = data.course;
-            const isAuth  = data.is_auth;
+            const data      = await resp.json();
+            const course    = data.course;
+            const isAuth    = data.is_auth;
             const reqStatus = data.request_status;
 
             document.getElementById('modal-desc').textContent = course.description || t('modal.no_desc');
@@ -753,11 +773,10 @@
             if (course.modules && course.modules.length > 0) {
                 let html = '';
                 course.modules.forEach((mod, mi) => {
-                    html += `
-                        <div class="relative pl-8 border-l border-slate-200 pb-6 last:pb-0 last:border-0">
-                            <div class="absolute -left-1.5 top-1 w-3 h-3 bg-indigo-600 rounded-full ring-4 ring-white"></div>
-                            <h4 class="text-sm font-bold text-slate-900 mb-2 uppercase tracking-wide">${t('modal.module')} ${mi + 1}: ${escapeHtml(mod.title)}</h4>
-                            <div class="space-y-2">`;
+                    html += `<div class="relative pl-8 border-l border-slate-200 pb-6 last:pb-0 last:border-0">
+                        <div class="absolute -left-1.5 top-1 w-3 h-3 bg-indigo-600 rounded-full ring-4 ring-white"></div>
+                        <h4 class="text-sm font-bold text-slate-900 mb-2 uppercase tracking-wide">${t('modal.module')} ${mi + 1}: ${escapeHtml(mod.title)}</h4>
+                        <div class="space-y-2">`;
                     (mod.lessons || []).forEach(l => {
                         html += `<div class="flex items-center text-slate-600 text-sm"><i class="far fa-file-alt mr-3 text-slate-400"></i>${escapeHtml(l.title)}</div>`;
                     });
@@ -835,8 +854,7 @@
     function checkLanguagePreference() {
         if (localStorage.getItem('lang_chosen')) return;
         const browserLang = (navigator.language || navigator.userLanguage || 'ru').toLowerCase().split('-')[0];
-        const supported = { ru: true, en: true, ky: true };
-        if (supported[browserLang] && browserLang !== SITE_LANG) {
+        if ({ ru: true, en: true, ky: true }[browserLang] && browserLang !== SITE_LANG) {
             document.getElementById('lang-detect-overlay').classList.remove('hidden');
         }
     }
@@ -844,9 +862,8 @@
     async function chooseLang(lang) {
         localStorage.setItem('lang_chosen', '1');
         await fetch('/api/language', {
-            method:  'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify({ lang })
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ lang })
         });
         location.reload();
     }

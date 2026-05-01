@@ -471,5 +471,7 @@
   "home.stat_cert": "Certificates",
   "home.stat_langs": "learning languages",
   "home.badge_open": "OPEN",
-  "home.clear_search": "Clear search"
+  "home.clear_search": "Clear search",
+  "home.page_prev": "Prev",
+  "home.page_next": "Next"
 }

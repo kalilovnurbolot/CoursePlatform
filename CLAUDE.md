@@ -111,16 +111,28 @@ Use `{{ T .Lang "key" }}` in Go templates to get a translated string. For JavaSc
 
 Quiz/progress API endpoints (`/api/course/.../quiz`, `/api/course/.../done`) still require `userMiddleware` since saving progress requires knowing who the user is.
 
-`/api/home` returns `{ courses []Course, reviews []Review }`. `courses` are all published+approved courses ordered by `created_at desc`, preloaded with `Author` + `Modules.Lessons`. The `admin_status` filter keeps only `approved` or empty-status courses; `open_courses` as a separate field was removed — client-side JS filters for `is_open` when the "Open" pill is active. `reviews` are the top 6 (rating ≥ 4) with `User` and `Course` preloaded.
+`GET /api/home` — server-side search, filter, sort, and pagination. Query params:
 
-The home page (`template/index.html`) is a full Udemy-style layout:
-- **Hero** — dark indigo gradient, large headline, search bar (live filtering with 300ms debounce), popular-topic quick-search tags, decorative feature cards (desktop only)
-- **Stats bar** — animated course count + free/cert/language highlights
-- **Filter bar** (sticky `top-16`) — category pills (All / Open / RU / EN / KY) with live counts, sort dropdown (newest / A–Z / most lessons)
-- **Featured section** — top-4 courses shown as a row above the grid; hidden when any filter/search is active
-- **Course grid** — 4-column (xl), responsive down to 1; client-side search + filter + sort; 8-item page size with "Load more"; skeleton cards shown while loading
-- **Reviews** — horizontal scroll row, hidden if empty
+| Param | Values | Default |
+|---|---|---|
+| `search` | string | — |
+| `filter` | `all` \| `open` \| `ru` \| `en` \| `ky` | `all` |
+| `sort` | `newest` \| `az` \| `lessons` | `newest` |
+| `page` | int | `1` |
+
+Response: `{ courses, reviews, total, page, total_pages, counts: { all, open, ru, en, ky } }`. Page size is 12. `reviews` (top 6, rating ≥ 4) are only returned on the initial load (page 1, filter `all`, no search). `sort=lessons` uses a SQL subquery to count lessons per course server-side.
+
+The home page (`template/index.html`) is a fully API-driven, Udemy-style layout:
+- **Hero** — dark indigo gradient, large headline, search bar (300ms debounce → API call), popular-topic quick-search tags, decorative feature cards (desktop only)
+- **Stats bar** — animated total course count (from `counts.all`) + free/cert/language highlights
+- **Filter bar** (sticky `top-16`) — category pills (All / Open / RU / EN / KY) with server-returned counts, sort dropdown (newest / A–Z / most lessons)
+- **Featured section** — top-4 courses from the current page; hidden when any filter/search/non-first-page is active
+- **Course grid** — 4-column (xl), responsive down to 1; skeleton cards shown while loading; all filtering/sorting done server-side
+- **Pagination** — numbered pages with Prev/Next; smart ellipsis (`1 … 4 5 6 … 10`); hidden when ≤1 page
+- **Reviews** — horizontal scroll row, rendered once on first load, hidden if empty
 - **Features** — 3-card section with CTA
+
+JS state object: `{ search, filter, sort, page, totalPages }`. Any state change resets `page` to 1 and calls `loadCourses()` which builds query params and fetches `/api/home`.
 
 ### About page (`/about`)
 
@@ -273,6 +285,7 @@ TransJSON: BuildTransJSON(lang),  // exported helper in handlers package
 - `creq.*` — Admin course-requests panel strings
 - `nav.studio` — "My Studio" navigation link
 - `admin.users_*` — Admin user management page strings
+- `home.page_prev` / `home.page_next` — Pagination Prev/Next button labels
 
 **Adding a new translation key:**
 1. Add the key/value to all three `locales/*.json` files.

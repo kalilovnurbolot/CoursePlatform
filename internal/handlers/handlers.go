@@ -6,6 +6,8 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gorilla/sessions"
@@ -174,27 +176,95 @@ func (h *Handler) HandleMain(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetHomeDataAPI(w http.ResponseWriter, r *http.Request) {
-	var response struct {
-		Courses []models.Course `json:"courses"`
-		Reviews []models.Review `json:"reviews"`
+	const pageSize = 12
+
+	search := strings.TrimSpace(r.URL.Query().Get("search"))
+	filter := r.URL.Query().Get("filter")
+	sortBy := r.URL.Query().Get("sort")
+	page := 1
+	if p, err := strconv.Atoi(r.URL.Query().Get("page")); err == nil && p > 0 {
+		page = p
+	}
+	if filter == "" {
+		filter = "all"
+	}
+	if sortBy == "" {
+		sortBy = "newest"
 	}
 
-	if err := h.DB.Preload("Author").Preload("Modules.Lessons").
-		Where("is_published = ? AND (admin_status = ? OR admin_status = ?)", true, "approved", "").
-		Order("created_at desc").
-		Find(&response.Courses).Error; err != nil {
+	base := h.DB.Model(&models.Course{}).
+		Where("is_published = ? AND (admin_status = ? OR admin_status = ?)", true, "approved", "")
+	if search != "" {
+		base = base.Where(
+			"title ILIKE ? OR author_id IN (SELECT id FROM users WHERE name ILIKE ?)",
+			"%"+search+"%", "%"+search+"%",
+		)
+	}
+
+	var cAll, cOpen, cRU, cEN, cKY int64
+	base.Count(&cAll)
+	base.Where("is_open = ?", true).Count(&cOpen)
+	base.Where("language = ?", "ru").Count(&cRU)
+	base.Where("language = ?", "en").Count(&cEN)
+	base.Where("language = ?", "ky").Count(&cKY)
+
+	q := base
+	switch filter {
+	case "open":
+		q = q.Where("is_open = ?", true)
+	case "ru", "en", "ky":
+		q = q.Where("language = ?", filter)
+	}
+
+	var total int64
+	q.Count(&total)
+
+	switch sortBy {
+	case "az":
+		q = q.Order("title ASC")
+	case "lessons":
+		q = q.Order("(SELECT COUNT(l.id) FROM lessons l JOIN modules m ON m.id = l.module_id WHERE m.course_id = courses.id) DESC")
+	default:
+		q = q.Order("created_at DESC")
+	}
+
+	totalPages := int((total + pageSize - 1) / pageSize)
+	if totalPages < 1 {
+		totalPages = 1
+	}
+
+	var courses []models.Course
+	if err := q.Preload("Author").Preload("Modules.Lessons").
+		Offset((page - 1) * pageSize).Limit(pageSize).
+		Find(&courses).Error; err != nil {
 		http.Error(w, "Database error", http.StatusInternalServerError)
 		return
 	}
 
-	h.DB.Preload("User").Preload("Course").
-		Where("rating >= ?", 4).
-		Order("created_at desc").
-		Limit(6).
-		Find(&response.Reviews)
+	var reviews []models.Review
+	if page == 1 && filter == "all" && search == "" {
+		h.DB.Preload("User").Preload("Course").
+			Where("rating >= ?", 4).
+			Order("created_at desc").
+			Limit(6).
+			Find(&reviews)
+	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	json.NewEncoder(w).Encode(map[string]any{
+		"courses":     courses,
+		"reviews":     reviews,
+		"total":       total,
+		"page":        page,
+		"total_pages": totalPages,
+		"counts": map[string]int64{
+			"all":  cAll,
+			"open": cOpen,
+			"ru":   cRU,
+			"en":   cEN,
+			"ky":   cKY,
+		},
+	})
 }
 
 // HandleSetLanguage saves the chosen language to a cookie and, if the user is

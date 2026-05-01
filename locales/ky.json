@@ -471,5 +471,7 @@
   "home.stat_cert": "Сертификаттар",
   "home.stat_langs": "окутуу тили",
   "home.badge_open": "АЧЫК",
-  "home.clear_search": "Издөөнү тазалоо"
+  "home.clear_search": "Издөөнү тазалоо",
+  "home.page_prev": "Артка",
+  "home.page_next": "Алдыга"
 }
