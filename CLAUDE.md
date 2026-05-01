@@ -37,16 +37,16 @@ This is a Go web application using `gorilla/mux` for routing, `gorm` with Postgr
 | `internal/handlers` | Base `Handler` struct — auth flows, main page, language endpoint, `logAction` helper |
 | `internal/handlers/cabinet.go` | `HandleCabinet` (personal dashboard), `HandleVerifyCertificate` |
 | `internal/handlers/studio.go` | `HandleStudioPage` + all `/api/studio/...` course/module/lesson/content APIs (author-scoped) |
-| `internal/handlers/userprofile.go` | `HandleUserProfilePage` — public profile at `/user/{id}` |
+| `internal/handlers/userprofile.go` | `HandleUserProfilePage` — public profile at `/user/{public_id}` |
 | `internal/handlers/admin` | Admin `Service` struct (embeds `Handler`) — course/module/lesson CRUD, enrollment management, journal/reports |
 | `internal/handlers/admin/course_requests.go` | `HandleCourseRequestsPage`, `GetCourseRequestsAPI`, `ReviewCourseRequestAPI` — admin approval workflow |
-| `internal/handlers/admin/users_api.go` | `GetUsersAPI`, `UpdateUserRoleAPI` — user list with search/filter and role management |
+| `internal/handlers/admin/users_api.go` | `GetUsersAPI`, `UpdateUserRoleAPI` — user list with search/filter, role management, and per-user course count |
 | `internal/handlers/personal` | Student "my courses" view |
 | `internal/middleware` | `RequiredRole` — wraps `http.HandlerFunc`, checks session + DB role (`user.RoleID >= requiredRoleID`), renders 403 page on failure |
-| `internal/models` | GORM models: `User`, `Role`, `Course`, `Module`, `Lesson`, `ContentBlock`, `Enrollment`, `LessonProgress`, `QuizAttempt`, `Comment`, `Review`, `Certificate`, `UserLog` |
+| `internal/models` | GORM models: `User` (has `PublicID` UUID for public URLs), `Role`, `Course`, `Module`, `Lesson`, `ContentBlock`, `Enrollment`, `LessonProgress`, `QuizAttempt`, `Comment`, `Review`, `Certificate`, `UserLog` |
 | `internal/auth` | Google OAuth2 config init |
-| `internal/storage` | `SaveUser` — upserts a Google user into the DB |
-| `internal/database` | `Connect` (5-retry loop), `AutoMigrate`, `Seed` |
+| `internal/storage` | `SaveUser` — upserts a Google user into the DB; generates `PublicID` (UUID v4) on create, back-fills it for existing users |
+| `internal/database` | `Connect` (5-retry loop), `AutoMigrate` (+ UUID back-fill + NOT NULL migration for `public_id`), `Seed` |
 | `internal/i18n` | Translation loader and `T(lang, key)` lookup function |
 
 ### Authentication & roles
@@ -87,7 +87,7 @@ Key templates added:
 | Template | Route | Notes |
 |---|---|---|
 | `template/personal/studio.html` | `/studio` | Full course editor for regular users; calls `/api/studio/...` |
-| `template/personal/user_profile.html` | `/user/{id}` | Public profile with course cards and enrollment actions |
+| `template/personal/user_profile.html` | `/user/{public_id}` | Public profile with course cards and enrollment actions |
 | `template/admin/course_requests.html` | `/admin/course-requests` | Admin review panel; approve/reject with note |
 | `template/admin/users.html` | `/admin/users` | Admin user management — search, filter by role, change role inline |
 
@@ -175,17 +175,17 @@ Admin actions are at `GET /admin/course-requests` (page) and `PUT /api/admin/cou
 
 | Method | Path | Action |
 |---|---|---|
-| `GET` | `/api/admin/users` | Paginated user list; query params: `search` (name/email ILIKE), `role` (RoleID int), `page` (default 1, 20 per page) |
+| `GET` | `/api/admin/users` | Paginated user list; query params: `search` (name/email ILIKE), `role` (RoleID int), `page` (default 1, 20 per page). Returns `id`, `public_id`, `name`, `email`, `picture`, `role_id`, `role`, `course_count` |
 | `PUT` | `/api/admin/users/{id}/role` | Change a user's role; body `{"role_id": uint}` |
 
 **Business rules:**
 - An admin cannot demote their own role below `RoleAdmin` (returns `403 cannot demote yourself`).
 - `role_id` must match an existing `Role` row or the request is rejected with `400`.
-- The page renders a table with avatar, name, email, colour-coded role badge, and an inline `<select>` for instant role change.
+- The page renders a table with avatar, name (links to `/user/{public_id}`), email, colour-coded role badge, course count (badge links to profile), and an inline `<select>` for instant role change.
 
-### Public user profile (`/user/{id}`)
+### Public user profile (`/user/{public_id}`)
 
-`GET /user/{id}` — public, no auth required. Renders `user_profile.html`.
+`GET /user/{public_id}` — public, no auth required. Renders `user_profile.html`. `public_id` is a UUID v4 stored on `User.PublicID`; numeric IDs are never exposed in URLs to prevent enumeration.
 
 Shows the profiled user's avatar, name, and all their courses where `admin_status = 'approved' AND is_published = true`. For the current viewer, enrollment status per course is looked up so the correct action button is shown (Start / Go to course / Pending / Enroll / Login).
 
