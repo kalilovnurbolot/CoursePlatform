@@ -56,7 +56,7 @@ func (h *Handler) StudioGetCoursesAPI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var courses []models.Course
-	if err := h.DB.Preload("Author").Where("author_id = ?", userID).
+	if err := h.DB.Preload("Author").Preload("Modules.Lessons").Where("author_id = ?", userID).
 		Order("created_at desc").Find(&courses).Error; err != nil {
 		studioJSONError(w, "Database error", http.StatusInternalServerError)
 		return
