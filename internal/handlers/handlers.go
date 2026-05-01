@@ -175,21 +175,17 @@ func (h *Handler) HandleMain(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) GetHomeDataAPI(w http.ResponseWriter, r *http.Request) {
 	var response struct {
-		Courses     []models.Course `json:"courses"`
-		OpenCourses []models.Course `json:"open_courses"`
-		Reviews     []models.Review `json:"reviews"`
+		Courses []models.Course `json:"courses"`
+		Reviews []models.Review `json:"reviews"`
 	}
 
-	if err := h.DB.Preload("Author").
+	if err := h.DB.Preload("Author").Preload("Modules.Lessons").
 		Where("is_published = ? AND (admin_status = ? OR admin_status = ?)", true, "approved", "").
+		Order("created_at desc").
 		Find(&response.Courses).Error; err != nil {
 		http.Error(w, "Database error", http.StatusInternalServerError)
 		return
 	}
-
-	h.DB.Preload("Author").Preload("Modules.Lessons").
-		Where("is_published = ? AND is_open = ? AND (admin_status = ? OR admin_status = ?)", true, true, "approved", "").
-		Find(&response.OpenCourses)
 
 	h.DB.Preload("User").Preload("Course").
 		Where("rating >= ?", 4).

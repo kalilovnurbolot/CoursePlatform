@@ -111,7 +111,16 @@ Use `{{ T .Lang "key" }}` in Go templates to get a translated string. For JavaSc
 
 Quiz/progress API endpoints (`/api/course/.../quiz`, `/api/course/.../done`) still require `userMiddleware` since saving progress requires knowing who the user is.
 
-`/api/home` returns `open_courses []Course` (separate from `courses`) — only courses where `is_published = true AND is_open = true AND (admin_status = 'approved' OR admin_status = '')`, preloaded with `Modules.Lessons` for the lesson count on the card. The `admin_status` filter ensures only approved user-created courses appear publicly; the `OR admin_status = ''` guard keeps older rows (created before the field existed) visible.
+`/api/home` returns `{ courses []Course, reviews []Review }`. `courses` are all published+approved courses ordered by `created_at desc`, preloaded with `Author` + `Modules.Lessons`. The `admin_status` filter keeps only `approved` or empty-status courses; `open_courses` as a separate field was removed — client-side JS filters for `is_open` when the "Open" pill is active. `reviews` are the top 6 (rating ≥ 4) with `User` and `Course` preloaded.
+
+The home page (`template/index.html`) is a full Udemy-style layout:
+- **Hero** — dark indigo gradient, large headline, search bar (live filtering with 300ms debounce), popular-topic quick-search tags, decorative feature cards (desktop only)
+- **Stats bar** — animated course count + free/cert/language highlights
+- **Filter bar** (sticky `top-16`) — category pills (All / Open / RU / EN / KY) with live counts, sort dropdown (newest / A–Z / most lessons)
+- **Featured section** — top-4 courses shown as a row above the grid; hidden when any filter/search is active
+- **Course grid** — 4-column (xl), responsive down to 1; client-side search + filter + sort; 8-item page size with "Load more"; skeleton cards shown while loading
+- **Reviews** — horizontal scroll row, hidden if empty
+- **Features** — 3-card section with CTA
 
 ### About page (`/about`)
 
