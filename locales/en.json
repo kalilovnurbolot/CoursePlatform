@@ -445,6 +445,13 @@
   "about.cta_desc": "Join us and start learning or teaching today — it's free.",
   "about.cta_start": "Start for Free",
   "about.cta_browse": "Browse Courses",
+  "about.content_subtitle": "Diverse content formats for effective learning",
+  "about.content_text": "Text",
+  "about.content_code": "Code",
+  "about.content_video": "Video",
+  "about.content_quiz": "Quizzes",
+  "about.content_vocab": "Vocabulary",
+  "about.content_audio": "Audio Dictation",
 
   "home.search_placeholder": "Search for a course or instructor...",
   "home.search_btn": "Search",

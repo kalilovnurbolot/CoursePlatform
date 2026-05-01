@@ -445,6 +445,13 @@
   "about.cta_desc": "Присоединяйтесь и начните учиться или преподавать уже сегодня — это бесплатно.",
   "about.cta_start": "Начать бесплатно",
   "about.cta_browse": "Смотреть курсы",
+  "about.content_subtitle": "Разнообразные форматы контента для эффективного обучения",
+  "about.content_text": "Текст",
+  "about.content_code": "Код",
+  "about.content_video": "Видео",
+  "about.content_quiz": "Тесты",
+  "about.content_vocab": "Словарь",
+  "about.content_audio": "Аудио-диктант",
 
   "home.search_placeholder": "Поиск курса или автора...",
   "home.search_btn": "Найти",

@@ -445,6 +445,13 @@
   "about.cta_desc": "Бизге кошулуп, бүгүн эле окууну же үйрөтүүнү баштаңыз — бул акысыз.",
   "about.cta_start": "Акысыз баштоо",
   "about.cta_browse": "Курстарды карагыла",
+  "about.content_subtitle": "Натыйжалуу окуу үчүн ар түрдүү контент форматтары",
+  "about.content_text": "Текст",
+  "about.content_code": "Код",
+  "about.content_video": "Видео",
+  "about.content_quiz": "Тесттер",
+  "about.content_vocab": "Сөздүк",
+  "about.content_audio": "Аудио диктант",
 
   "home.search_placeholder": "Курс же автор боюнча издөө...",
   "home.search_btn": "Издөө",
