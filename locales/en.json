@@ -397,5 +397,52 @@
   "admin.users_of": "of",
   "admin.users_confirm_role": "Change this user's role?",
   "admin.users_error_update": "Failed to change role. Please try again.",
-  "admin.users_self_warn": "Cannot demote your own role"
+  "admin.users_self_warn": "Cannot demote your own role",
+
+  "about.badge": "About Us",
+  "about.title": "About CoursePlatform",
+  "about.subtitle": "An open learning platform for everyone who wants to learn and share knowledge",
+  "about.mission_title": "Our Mission",
+  "about.mission_desc": "CoursePlatform is an open educational platform where anyone can learn from the best and share their own knowledge. We believe quality education should be accessible to everyone — with no barriers of location, time, or background.",
+
+  "about.what_title": "What you can do on this platform",
+  "about.what_subtitle": "Everything you need for learning and teaching — in one place",
+  "about.feat_learn_title": "Learn",
+  "about.feat_learn_desc": "Enroll in courses, go through lessons at your own pace and track your progress in your personal account.",
+  "about.feat_create_title": "Create Courses",
+  "about.feat_create_desc": "Any user can create their own course with text, video, quizzes, vocabulary lists, and audio dictations.",
+  "about.feat_cert_title": "Get Certificates",
+  "about.feat_cert_desc": "Upon completing a course a certificate is automatically issued with a unique code for public verification.",
+  "about.feat_open_title": "Open Access",
+  "about.feat_open_desc": "Some courses and lessons are available without registration — start learning right now, no account needed.",
+
+  "about.how_title": "How to Get Started",
+  "about.how_subtitle": "Four simple steps to your first course",
+  "about.step1_title": "Sign in with Google",
+  "about.step1_desc": "Registration takes a few seconds. Click 'Get started' and sign in with your Google account.",
+  "about.step2_title": "Choose a Course",
+  "about.step2_desc": "Open the catalog, find a course you like, review the syllabus and click 'Enroll'.",
+  "about.step3_title": "Go Through Lessons",
+  "about.step3_desc": "Read materials, watch videos, take quizzes and vocabulary exercises — any time, from any device.",
+  "about.step4_title": "Get Your Certificate",
+  "about.step4_desc": "Once you complete all lessons the platform automatically issues a certificate confirming your course completion.",
+
+  "about.for_students_title": "For Students",
+  "about.for_students_1": "Unlimited access to courses on various topics",
+  "about.for_students_2": "Detailed progress statistics and quiz results",
+  "about.for_students_3": "Quizzes and exercises to reinforce the material",
+  "about.for_students_4": "Audio dictations for learning foreign languages",
+  "about.for_students_5": "Personal account with all courses, reviews, and certificates",
+
+  "about.for_authors_title": "For Authors",
+  "about.for_authors_1": "Built-in course editor — no programming skills required",
+  "about.for_authors_2": "Support for text, code, video, quizzes, and vocabulary blocks",
+  "about.for_authors_3": "Courses are published after review by platform moderators",
+  "about.for_authors_4": "Student statistics and average course rating",
+  "about.for_authors_5": "Public author profile with all published courses",
+
+  "about.cta_title": "Ready to Start?",
+  "about.cta_desc": "Join us and start learning or teaching today — it's free.",
+  "about.cta_start": "Start for Free",
+  "about.cta_browse": "Browse Courses"
 }

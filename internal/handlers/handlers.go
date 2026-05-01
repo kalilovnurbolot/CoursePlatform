@@ -248,6 +248,28 @@ func (h *Handler) logAction(userID uint, action, details string, courseID, lesso
 	}
 }
 
+func (h *Handler) HandleAboutPage(w http.ResponseWriter, r *http.Request) {
+	roleID, userID := h.GetUserRoleID(r)
+	session, _ := h.Store.Get(r, "session")
+	lang := h.DetectLang(r)
+
+	data := PageData{
+		Title:           i18n.T(lang, "about.title"),
+		IsAuthenticated: userID != 0,
+		UserID:          userID,
+		RoleID:          roleID,
+		UserName:        toString(session.Values["name"]),
+		UserPictureURL:  toString(session.Values["picture_url"]),
+		Lang:            lang,
+		TransJSON:       buildTransJSON(lang),
+	}
+
+	if err := h.Tmpl.ExecuteTemplate(w, "about.html", data); err != nil {
+		log.Printf("Error rendering about.html: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	}
+}
+
 func (h *Handler) HandleAdmin(w http.ResponseWriter, r *http.Request) {}
 
 func (h *Handler) HandleProfile(w http.ResponseWriter, r *http.Request) {

@@ -74,6 +74,7 @@ func main() {
 	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
 
 	r.HandleFunc("/", h.HandleMain).Methods("GET")
+	r.HandleFunc("/about", h.HandleAboutPage).Methods("GET")
 	r.HandleFunc("/api/home", h.GetHomeDataAPI).Methods("GET")
 	r.HandleFunc("/api/language", h.HandleSetLanguage).Methods("POST")
 

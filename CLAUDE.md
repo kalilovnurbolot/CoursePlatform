@@ -34,7 +34,7 @@ This is a Go web application using `gorilla/mux` for routing, `gorm` with Postgr
 
 | Package | Role |
 |---|---|
-| `internal/handlers` | Base `Handler` struct — auth flows, main page, language endpoint, `logAction` helper |
+| `internal/handlers` | Base `Handler` struct — auth flows, main page, about page, language endpoint, `logAction` helper |
 | `internal/handlers/cabinet.go` | `HandleCabinet` (personal dashboard), `HandleVerifyCertificate` |
 | `internal/handlers/studio.go` | `HandleStudioPage` + all `/api/studio/...` course/module/lesson/content APIs (author-scoped) |
 | `internal/handlers/userprofile.go` | `HandleUserProfilePage` — public profile at `/user/{public_id}` |
@@ -86,6 +86,7 @@ Key templates added:
 
 | Template | Route | Notes |
 |---|---|---|
+| `template/about.html` | `/about` | Public "About" page — mission, features, how-to guide, for-students/authors, CTA |
 | `template/personal/studio.html` | `/studio` | Full course editor for regular users; calls `/api/studio/...` |
 | `template/personal/user_profile.html` | `/user/{public_id}` | Public profile with course cards and enrollment actions |
 | `template/admin/course_requests.html` | `/admin/course-requests` | Admin review panel; approve/reject with note |
@@ -111,6 +112,21 @@ Use `{{ T .Lang "key" }}` in Go templates to get a translated string. For JavaSc
 Quiz/progress API endpoints (`/api/course/.../quiz`, `/api/course/.../done`) still require `userMiddleware` since saving progress requires knowing who the user is.
 
 `/api/home` returns `open_courses []Course` (separate from `courses`) — only courses where `is_published = true AND is_open = true AND (admin_status = 'approved' OR admin_status = '')`, preloaded with `Modules.Lessons` for the lesson count on the card. The `admin_status` filter ensures only approved user-created courses appear publicly; the `OR admin_status = ''` guard keeps older rows (created before the field existed) visible.
+
+### About page (`/about`)
+
+`GET /about` — public, no auth required. Renders `about.html` via `HandleAboutPage`.
+
+Sections (all text is i18n via `about.*` keys):
+1. **Hero** — badge, title, subtitle
+2. **Mission** — text block + 4 stat tiles (languages, courses, certificates, community)
+3. **What you can do** — 4 feature cards: Learn / Create Courses / Get Certificates / Open Access
+4. **How to get started** — 4 numbered steps (sign in → choose course → go through lessons → get certificate)
+5. **For students / For authors** — two side-by-side checklist cards; CTA buttons adapt to auth state (authenticated → cabinet/studio, guest → Google login)
+6. **Content types** — 6 block type icons: text, code, video, quiz, vocabulary, audio dictation
+7. **CTA banner** — gradient section; authenticated users see "My Account", guests see Google login button
+
+Nav link in `template/layouts/header.html` points to `/about` (was `#about`).
 
 ### Personal cabinet
 
@@ -217,7 +233,7 @@ type ProfileCourseView struct {
 
 The app supports three languages: **Russian (`ru`)**, **English (`en`)**, **Kyrgyz (`ky`)**.
 
-**Translation files:** `locales/ru.json`, `locales/en.json`, `locales/ky.json` — flat key/value JSON, ~260 keys each.  
+**Translation files:** `locales/ru.json`, `locales/en.json`, `locales/ky.json` — flat key/value JSON, ~430 keys each.  
 **Loader:** `i18n.Load("locales")` is called once in `main.go` before anything else.
 
 **Language detection priority** (highest → lowest):
@@ -239,6 +255,7 @@ TransJSON: BuildTransJSON(lang),  // exported helper in handlers package
 - First-visit JS modal: shown when `navigator.language` base code ≠ `SITE_LANG` and `localStorage.lang_chosen` is not set.
 
 **Key namespaces added:**
+- `about.*` — About page strings: mission, feature cards, how-to steps, for-students/authors lists, CTA
 - `studio.*` — User Studio page strings, including:
   - `studio.created` / `studio.updated` — date labels on course cards
   - `studio.modules` / `studio.lessons` — unit suffixes for counts on cards
