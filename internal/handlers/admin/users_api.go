@@ -46,13 +46,33 @@ func (serv Service) GetUsersAPI(w http.ResponseWriter, r *http.Request) {
 	var users []models.User
 	query.Offset((page-1)*perPage).Limit(perPage).Order("id asc").Find(&users)
 
+	// batch-count courses per author
+	userIDs := make([]uint, 0, len(users))
+	for _, u := range users {
+		userIDs = append(userIDs, u.ID)
+	}
+	var counts []struct {
+		AuthorID uint
+		Count    int64
+	}
+	serv.DB.Model(&models.Course{}).
+		Select("author_id, count(*) as count").
+		Where("author_id IN ?", userIDs).
+		Group("author_id").
+		Scan(&counts)
+	courseCount := make(map[uint]int64, len(counts))
+	for _, c := range counts {
+		courseCount[c.AuthorID] = c.Count
+	}
+
 	type UserRow struct {
-		ID      uint   `json:"id"`
-		Name    string `json:"name"`
-		Email   string `json:"email"`
-		Picture string `json:"picture"`
-		RoleID  uint   `json:"role_id"`
-		Role    string `json:"role"`
+		ID          uint   `json:"id"`
+		Name        string `json:"name"`
+		Email       string `json:"email"`
+		Picture     string `json:"picture"`
+		RoleID      uint   `json:"role_id"`
+		Role        string `json:"role"`
+		CourseCount int64  `json:"course_count"`
 	}
 	rows := make([]UserRow, 0, len(users))
 	for _, u := range users {
@@ -61,12 +81,13 @@ func (serv Service) GetUsersAPI(w http.ResponseWriter, r *http.Request) {
 			roleName = u.Role.Name
 		}
 		rows = append(rows, UserRow{
-			ID:      u.ID,
-			Name:    u.Name,
-			Email:   u.Email,
-			Picture: u.Picture,
-			RoleID:  u.RoleID,
-			Role:    roleName,
+			ID:          u.ID,
+			Name:        u.Name,
+			Email:       u.Email,
+			Picture:     u.Picture,
+			RoleID:      u.RoleID,
+			Role:        roleName,
+			CourseCount: courseCount[u.ID],
 		})
 	}
 
