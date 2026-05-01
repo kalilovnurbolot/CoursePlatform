@@ -192,33 +192,37 @@ func (h *Handler) GetHomeDataAPI(w http.ResponseWriter, r *http.Request) {
 		sortBy = "newest"
 	}
 
-	base := h.DB.Model(&models.Course{}).
-		Where("is_published = ? AND (admin_status = ? OR admin_status = ?)", true, "approved", "")
-	if search != "" {
-		base = base.Where(
-			"title ILIKE ? OR author_id IN (SELECT id FROM users WHERE name ILIKE ?)",
-			"%"+search+"%", "%"+search+"%",
-		)
+	// mk builds a fresh query every call to avoid GORM Statement mutation
+	// across multiple Count/Find calls on the same *gorm.DB.
+	mk := func(lang ...string) *gorm.DB {
+		q := h.DB.Model(&models.Course{}).
+			Where("is_published = ? AND (admin_status = ? OR admin_status = ?)", true, "approved", "")
+		if search != "" {
+			q = q.Where(
+				"title ILIKE ? OR author_id IN (SELECT id FROM users WHERE name ILIKE ?)",
+				"%"+search+"%", "%"+search+"%",
+			)
+		}
+		if len(lang) > 0 {
+			switch lang[0] {
+			case "open":
+				q = q.Where("is_open = ?", true)
+			case "ru", "en", "ky":
+				q = q.Where("language = ?", lang[0])
+			}
+		}
+		return q
 	}
 
-	var cAll, cOpen, cRU, cEN, cKY int64
-	base.Count(&cAll)
-	base.Where("is_open = ?", true).Count(&cOpen)
-	base.Where("language = ?", "ru").Count(&cRU)
-	base.Where("language = ?", "en").Count(&cEN)
-	base.Where("language = ?", "ky").Count(&cKY)
+	var cAll, cOpen, cRU, cEN, cKY, total int64
+	mk().Count(&cAll)
+	mk("open").Count(&cOpen)
+	mk("ru").Count(&cRU)
+	mk("en").Count(&cEN)
+	mk("ky").Count(&cKY)
+	mk(filter).Count(&total)
 
-	q := base
-	switch filter {
-	case "open":
-		q = q.Where("is_open = ?", true)
-	case "ru", "en", "ky":
-		q = q.Where("language = ?", filter)
-	}
-
-	var total int64
-	q.Count(&total)
-
+	q := mk(filter)
 	switch sortBy {
 	case "az":
 		q = q.Order("title ASC")
