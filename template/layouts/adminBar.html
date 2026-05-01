@@ -33,6 +33,11 @@
                     {{$creqClass := "text-yellow-400 hover:bg-slate-800 hover:text-yellow-200"}}
                     {{if eq .CurrentPath $creqPath}}{{$creqClass = "bg-slate-800 text-yellow-300"}}{{end}}
                     <a href="{{$creqPath}}" class="px-3 py-2 rounded-md text-xs font-medium transition {{$creqClass}}"><i class="fas fa-inbox mr-1"></i>{{ T .Lang "creq.title" }}</a>
+
+                    {{$usersNavPath := "/admin/users"}}
+                    {{$usersNavClass := "text-slate-300 hover:bg-slate-800 hover:text-white"}}
+                    {{if eq .CurrentPath $usersNavPath}}{{$usersNavClass = "bg-slate-800 text-white"}}{{end}}
+                    <a href="{{$usersNavPath}}" class="px-3 py-2 rounded-md text-xs font-medium transition {{$usersNavClass}}"><i class="fas fa-users mr-1"></i>{{ T .Lang "admin.users_nav" }}</a>
                 </nav>
             </div>
 
