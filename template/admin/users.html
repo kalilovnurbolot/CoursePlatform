@@ -174,8 +174,9 @@ function renderTable(users) {
 
         const selfWarning = u.id === CURRENT_USER_ID ? `disabled title="${t('admin.users_self_warn')}"` : '';
 
+        const profileUrl = `/user/${u.public_id}`;
         const coursesBadge = u.course_count > 0
-            ? `<a href="/user/${u.id}" target="_blank"
+            ? `<a href="${profileUrl}" target="_blank"
                   class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition cursor-pointer">
                  <i class="fas fa-book-open text-[10px]"></i> ${u.course_count}
                </a>`
@@ -185,7 +186,7 @@ function renderTable(users) {
           <td class="px-5 py-3">
             <div class="flex items-center gap-3">
               ${avatar}
-              <a href="/user/${u.id}" target="_blank" class="font-medium text-gray-800 hover:text-indigo-600 transition">${escHtml(u.name)}</a>
+              <a href="${profileUrl}" target="_blank" class="font-medium text-gray-800 hover:text-indigo-600 transition">${escHtml(u.name)}</a>
             </div>
           </td>
           <td class="px-5 py-3 text-gray-500">${escHtml(u.email)}</td>

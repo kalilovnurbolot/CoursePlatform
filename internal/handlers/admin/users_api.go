@@ -67,6 +67,7 @@ func (serv Service) GetUsersAPI(w http.ResponseWriter, r *http.Request) {
 
 	type UserRow struct {
 		ID          uint   `json:"id"`
+		PublicID    string `json:"public_id"`
 		Name        string `json:"name"`
 		Email       string `json:"email"`
 		Picture     string `json:"picture"`
@@ -82,6 +83,7 @@ func (serv Service) GetUsersAPI(w http.ResponseWriter, r *http.Request) {
 		}
 		rows = append(rows, UserRow{
 			ID:          u.ID,
+			PublicID:    u.PublicID,
 			Name:        u.Name,
 			Email:       u.Email,
 			Picture:     u.Picture,

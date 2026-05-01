@@ -116,7 +116,7 @@ func main() {
 	r.HandleFunc("/course/{id:[0-9]+}/lesson/{lesson_id:[0-9]+}", h.HandleLessonView).Methods("GET")
 
 	// Public user profile
-	r.HandleFunc("/user/{id:[0-9]+}", h.HandleUserProfilePage).Methods("GET")
+	r.HandleFunc("/user/{public_id}", h.HandleUserProfilePage).Methods("GET")
 
 	// Studio (all authenticated users — author-scoped)
 	r.HandleFunc("/studio", userMiddleware(h.HandleStudioPage)).Methods("GET")

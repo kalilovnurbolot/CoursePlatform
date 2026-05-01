@@ -3,23 +3,22 @@ package handlers
 import (
 	"log"
 	"net/http"
-	"strconv"
 
 	"github.com/gorilla/mux"
 	"github.com/s/onlineCourse/internal/i18n"
 	"github.com/s/onlineCourse/internal/models"
 )
 
-// HandleUserProfilePage renders /user/{id} — public profile showing the user's approved courses.
+// HandleUserProfilePage renders /user/{public_id} — public profile showing the user's approved courses.
 func (h *Handler) HandleUserProfilePage(w http.ResponseWriter, r *http.Request) {
-	targetID, err := strconv.Atoi(mux.Vars(r)["id"])
-	if err != nil || targetID == 0 {
+	publicID := mux.Vars(r)["public_id"]
+	if publicID == "" {
 		http.NotFound(w, r)
 		return
 	}
 
 	var profileUser models.User
-	if err := h.DB.First(&profileUser, targetID).Error; err != nil {
+	if err := h.DB.Where("public_id = ?", publicID).First(&profileUser).Error; err != nil {
 		http.NotFound(w, r)
 		return
 	}
@@ -27,7 +26,7 @@ func (h *Handler) HandleUserProfilePage(w http.ResponseWriter, r *http.Request) 
 	// Load this user's approved + published courses
 	var courses []models.Course
 	h.DB.Preload("Author").Preload("Modules.Lessons").
-		Where("author_id = ? AND admin_status = ? AND is_published = ?", targetID, "approved", true).
+		Where("author_id = ? AND admin_status = ? AND is_published = ?", profileUser.ID, "approved", true).
 		Order("created_at desc").
 		Find(&courses)
 
@@ -62,7 +61,7 @@ func (h *Handler) HandleUserProfilePage(w http.ResponseWriter, r *http.Request) 
 	// Count authored courses for stats
 	var authoredCount int64
 	h.DB.Model(&models.Course{}).
-		Where("author_id = ? AND admin_status = ? AND is_published = ?", targetID, "approved", true).
+		Where("author_id = ? AND admin_status = ? AND is_published = ?", profileUser.ID, "approved", true).
 		Count(&authoredCount)
 
 	data := PageData{
