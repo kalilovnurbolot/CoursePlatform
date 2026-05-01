@@ -132,13 +132,24 @@ Quiz/progress API endpoints (`/api/course/.../quiz`, `/api/course/.../done`) sti
 
 `GET /studio` — requires `userMiddleware`. Any authenticated user can create and manage their own courses. Renders `studio.html`.
 
-The studio page shows all courses where `author_id = userID` (all statuses). Each card displays the `admin_status` badge, a rejection note if rejected, and context-appropriate action buttons.
+The studio page is **full-width** (no `max-w` constraint) and fully responsive. It shows all courses where `author_id = userID` (all statuses).
+
+**Course cards display:**
+- `admin_status` badge (overlaid on the cover image)
+- Rejection note if status is `rejected`
+- Module count and lesson count (from preloaded `Modules.Lessons`)
+- `created_at` and `updated_at` dates formatted with `toLocaleDateString`
+- Context-appropriate action buttons (Edit content / Settings / Submit / Delete)
+
+**Editor layout:**
+- Desktop (≥1024 px): 3-column grid — Structure tree (300 px) | Block editor (flex) | Lesson settings (300 px)
+- Mobile (<1024 px): tab bar at the top switches between Structure / Editor / Settings panels; selecting a lesson auto-switches to the Editor tab
 
 **Studio API endpoints** — all require `userMiddleware`; each handler additionally checks `author_id = userID`:
 
 | Method | Path | Action |
 |---|---|---|
-| `GET` | `/api/studio/courses` | List own courses |
+| `GET` | `/api/studio/courses` | List own courses — preloads `Author` + `Modules.Lessons` for card counts |
 | `POST` | `/api/studio/courses` | Create course (sets `admin_status = "draft"`) |
 | `PUT` | `/api/studio/courses/{id}` | Update basic info (blocked if `pending_review`) |
 | `DELETE` | `/api/studio/courses/{id}` | Delete (blocked if `approved`) |
@@ -206,7 +217,7 @@ type ProfileCourseView struct {
 
 The app supports three languages: **Russian (`ru`)**, **English (`en`)**, **Kyrgyz (`ky`)**.
 
-**Translation files:** `locales/ru.json`, `locales/en.json`, `locales/ky.json` — flat key/value JSON, ~250 keys each.  
+**Translation files:** `locales/ru.json`, `locales/en.json`, `locales/ky.json` — flat key/value JSON, ~260 keys each.  
 **Loader:** `i18n.Load("locales")` is called once in `main.go` before anything else.
 
 **Language detection priority** (highest → lowest):
@@ -228,7 +239,10 @@ TransJSON: BuildTransJSON(lang),  // exported helper in handlers package
 - First-visit JS modal: shown when `navigator.language` base code ≠ `SITE_LANG` and `localStorage.lang_chosen` is not set.
 
 **Key namespaces added:**
-- `studio.*` — User Studio page strings
+- `studio.*` — User Studio page strings, including:
+  - `studio.created` / `studio.updated` — date labels on course cards
+  - `studio.modules` / `studio.lessons` — unit suffixes for counts on cards
+  - `studio.tab_structure` / `studio.tab_editor` / `studio.tab_settings` — mobile editor tab labels
 - `userprofile.*` — Public user profile page strings
 - `creq.*` — Admin course-requests panel strings
 - `nav.studio` — "My Studio" navigation link
