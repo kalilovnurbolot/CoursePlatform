@@ -39,11 +39,14 @@ This is a Go web application using `gorilla/mux` for routing, `gorm` with Postgr
 | `internal/handlers/studio.go` | `HandleStudioPage` + all `/api/studio/...` course/module/lesson/content APIs (author-scoped) |
 | `internal/handlers/userprofile.go` | `HandleUserProfilePage` — public profile at `/user/{public_id}` |
 | `internal/handlers/admin` | Admin `Service` struct (embeds `Handler`) — course/module/lesson CRUD, enrollment management, journal/reports |
+| `internal/handlers/feedback.go` | `AddCommentAPI`, `GetCommentsAPI` (lesson comments), `AddCourseCommentAPI`, `GetCourseCommentsAPI` (course comments), `AddReviewAPI`, `GetReviewsAPI` |
+| `internal/handlers/reaction.go` | `ReactCourseAPI`, `GetCourseReactionsAPI`, `ReactLessonAPI`, `GetLessonReactionsAPI` — YouTube-style like/dislike toggle |
 | `internal/handlers/admin/course_requests.go` | `HandleCourseRequestsPage`, `GetCourseRequestsAPI`, `ReviewCourseRequestAPI` — admin approval workflow |
+| `internal/handlers/admin/journal.go` | `HandleJournalPage`, `GetJournalAPI` — paginated activity log viewer with action filter |
 | `internal/handlers/admin/users_api.go` | `GetUsersAPI`, `UpdateUserRoleAPI` — user list with search/filter, role management, and per-user course count |
 | `internal/handlers/personal` | Student "my courses" view |
 | `internal/middleware` | `RequiredRole` — wraps `http.HandlerFunc`, checks session + DB role (`user.RoleID >= requiredRoleID`), renders 403 page on failure |
-| `internal/models` | GORM models: `User` (has `PublicID` UUID for public URLs), `Role`, `Course`, `Module`, `Lesson`, `ContentBlock`, `Enrollment`, `LessonProgress`, `QuizAttempt`, `Comment`, `Review`, `Certificate`, `UserLog` |
+| `internal/models` | GORM models: `User` (has `PublicID` UUID for public URLs), `Role`, `Course`, `Module`, `Lesson`, `ContentBlock`, `Enrollment`, `LessonProgress`, `QuizAttempt`, `Comment`, `Review`, `Certificate`, `UserLog`, `Reaction` |
 | `internal/auth` | Google OAuth2 config init |
 | `internal/storage` | `SaveUser` — upserts a Google user into the DB; generates `PublicID` (UUID v4) on create, back-fills it for existing users |
 | `internal/database` | `Connect` (5-retry loop), `AutoMigrate` (+ UUID back-fill + NOT NULL migration for `public_id`), `Seed` |
@@ -76,7 +79,11 @@ Course → []Module → []Lesson → []ContentBlock
 
 `Certificate` is auto-issued when a user completes 100% of a course (checked in `MarkLessonReadAPI`). Has a unique `(UserID, CourseID)` index — one cert per course. `Code` is a 32-char hex string for public verification at `/certificate/{code}`.
 
-`UserLog` records user activity. Action constants are in `internal/models/log.go`: `LogLogin`, `LogLessonView`, `LogQuizAttempt`, `LogCourseComplete`, `LogReviewAdded`. Written via `h.logAction(userID, action, details, courseID, lessonID)` helper on `Handler`.
+`Comment` has two optional FK fields: `LessonID` (lesson comment) and `CourseID` (course comment) — exactly one is non-zero.
+
+`Reaction` stores like/dislike votes. Polymorphic: `TargetType ("course"|"lesson")` + `TargetID`. Unique index on `(UserID, TargetType, TargetID)` — one reaction per user per target. Toggle logic: same type → delete, different type → update.
+
+`UserLog` records user activity. Action constants are in `internal/models/log.go`: `LogLogin`, `LogLessonView`, `LogQuizAttempt`, `LogCourseComplete`, `LogReviewAdded`, `LogCommentAdded`, `LogReactionAdded`. Written via `h.logAction(userID, action, details, courseID, lessonID)` helper on `Handler`.
 
 ### Templates
 
@@ -91,6 +98,9 @@ Key templates added:
 | `template/personal/user_profile.html` | `/user/{public_id}` | Public profile with course cards and enrollment actions |
 | `template/admin/course_requests.html` | `/admin/course-requests` | Admin review panel; approve/reject with note |
 | `template/admin/users.html` | `/admin/users` | Admin user management — search, filter by role, change role inline |
+| `template/admin/journal.html` | `/admin/journal` | Activity journal — paginated table of `UserLog` rows, filter by action type, colour-coded badges |
+
+`template/student/lessonView.html` includes a **reaction bar** (like/dislike) between lesson content and the comments section. Reactions load via `GET /api/lessons/{id}/reactions` and toggle via `POST /api/lessons/{id}/react`. Unauthenticated clicks redirect to login.
 
 Use `{{ T .Lang "key" }}` in Go templates to get a translated string. For JavaScript inside templates, the full translation map is embedded via `{{.TransJSON}}` and accessed with `t('key')`:
 
@@ -215,6 +225,43 @@ The studio page is **full-width** (no `max-w` constraint) and fully responsive. 
 
 Admin actions are at `GET /admin/course-requests` (page) and `PUT /api/admin/course-requests/{id}` with `{"action":"approve"|"reject","review_note":"..."}`.
 
+### Reactions (like/dislike)
+
+Polymorphic `Reaction` model — one table for both courses and lessons.
+
+**API endpoints:**
+
+| Method | Path | Auth | Action |
+|---|---|---|---|
+| `POST` | `/api/courses/{id}/react` | user | Toggle like/dislike on course |
+| `GET` | `/api/courses/{id}/reactions` | — | Get counts + caller's current reaction |
+| `POST` | `/api/lessons/{id}/react` | user | Toggle like/dislike on lesson |
+| `GET` | `/api/lessons/{id}/reactions` | — | Get counts + caller's current reaction |
+
+Request body: `{"type": "like"|"dislike"}`. Response: `{"likes": N, "dislikes": N, "user_reaction": "like"|"dislike"|""}`.
+
+Every POST writes a `LogReactionAdded` entry to `user_logs`.
+
+### Comments
+
+Lesson comments: `POST/GET /api/lessons/{id}/comments` (existing).  
+Course comments: `POST/GET /api/courses/{id}/comments` (new).
+
+Both POST handlers write a `LogCommentAdded` entry to `user_logs`.
+
+### Admin activity journal (`/admin/journal`)
+
+`GET /admin/journal` — requires `adminMiddleware`. Renders `adminJournal` template.
+
+`GET /api/admin/journal` — paginated log of `user_logs`, 20 per page.
+
+| Param | Values | Default |
+|---|---|---|
+| `action` | `all` \| `login` \| `lesson_view` \| `comment_added` \| `reaction_added` \| `quiz_attempt` \| `course_complete` \| `review_added` | `all` |
+| `page` | int | `1` |
+
+Response: `{logs, total, page, total_pages}`. Each log row preloads `User`. The template renders colour-coded action badges per type and smart-ellipsis pagination.
+
 ### Admin user management (`/admin/users`)
 
 `GET /admin/users` — requires `adminMiddleware`. Renders `users.html` (template name `adminUsers`).
@@ -254,7 +301,7 @@ type ProfileCourseView struct {
 
 The app supports three languages: **Russian (`ru`)**, **English (`en`)**, **Kyrgyz (`ky`)**.
 
-**Translation files:** `locales/ru.json`, `locales/en.json`, `locales/ky.json` — flat key/value JSON, ~430 keys each.  
+**Translation files:** `locales/ru.json`, `locales/en.json`, `locales/ky.json` — flat key/value JSON, ~520 keys each.  
 **Loader:** `i18n.Load("locales")` is called once in `main.go` before anything else.
 
 **Language detection priority** (highest → lowest):
@@ -285,6 +332,9 @@ TransJSON: BuildTransJSON(lang),  // exported helper in handlers package
 - `creq.*` — Admin course-requests panel strings
 - `nav.studio` — "My Studio" navigation link
 - `admin.users_*` — Admin user management page strings
+- `admin.journal_*` — Admin activity journal page strings (title, action labels, filter options, badges)
+- `reaction.*` — Like/dislike button labels and login prompt
+- `comment.course_*` — Course-level comment section strings
 - `home.page_prev` / `home.page_next` — Pagination Prev/Next button labels
 
 **Adding a new translation key:**

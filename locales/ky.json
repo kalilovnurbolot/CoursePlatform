@@ -491,5 +491,33 @@
 
   "meta.desc.home": "Орусча, англисче жана кыргызча онлайн-окутуу платформасы. Программалоо, дизайн жана башка багыттар боюнча курстар. Материалдардын бир бөлүгү акысыз.",
   "meta.desc.about": "CoursePlatform жөнүндө билип алыңыз — миссиябыз, студенттер менен авторлор үчүн мүмкүнчүлүктөр жана азыр эле окуй баштоо жолу.",
-  "meta.desc.certificate": "CoursePlatform платформасынын курсту бүткөндүгүн тастыктаган сертификатын текшерүү."
+  "meta.desc.certificate": "CoursePlatform платформасынын курсту бүткөндүгүн тастыктаган сертификатын текшерүү.",
+
+  "reaction.like": "Жактырам",
+  "reaction.dislike": "Жактырбайм",
+  "reaction.liked": "Жакты",
+  "reaction.disliked": "Жакпады",
+  "reaction.login_to_react": "Баалоо үчүн кириңиз",
+
+  "comment.course_discussion": "Курс талкуусу",
+  "comment.course_placeholder": "Курс жөнүндө пикириңизди бөлүшүңүз...",
+
+  "admin.journal_nav": "Журнал",
+  "admin.journal_title": "Активдүүлүк журналы",
+  "admin.journal_subtitle": "Платформадагы бардык колдонуучу аракеттери",
+  "admin.journal_action": "Аракет",
+  "admin.journal_user": "Колдонуучу",
+  "admin.journal_details": "Маалымат",
+  "admin.journal_date": "Дата",
+  "admin.journal_filter_all": "Бардык аракеттер",
+  "admin.journal_login": "Кирүү",
+  "admin.journal_lesson_view": "Сабак көрүү",
+  "admin.journal_comment": "Комментарий",
+  "admin.journal_reaction": "Реакция",
+  "admin.journal_quiz": "Тест",
+  "admin.journal_complete": "Курс аяктады",
+  "admin.journal_review": "Пикир",
+  "admin.journal_empty": "Активдүүлүк жазуулары табылган жок.",
+  "admin.journal_loading": "Жүктөлүүдө...",
+  "admin.journal_total": "{n} жазуу"
 }

@@ -154,6 +154,20 @@ func main() {
 	r.HandleFunc("/api/courses/{id}/reviews", userMiddleware(h.AddReviewAPI)).Methods("POST")
 	r.HandleFunc("/api/courses/{id}/reviews", h.GetReviewsAPI).Methods("GET")
 
+	// Course comments
+	r.HandleFunc("/api/courses/{id}/comments", userMiddleware(h.AddCourseCommentAPI)).Methods("POST")
+	r.HandleFunc("/api/courses/{id}/comments", h.GetCourseCommentsAPI).Methods("GET")
+
+	// Reactions (like/dislike)
+	r.HandleFunc("/api/courses/{id}/react", userMiddleware(h.ReactCourseAPI)).Methods("POST")
+	r.HandleFunc("/api/courses/{id}/reactions", h.GetCourseReactionsAPI).Methods("GET")
+	r.HandleFunc("/api/lessons/{id}/react", userMiddleware(h.ReactLessonAPI)).Methods("POST")
+	r.HandleFunc("/api/lessons/{id}/reactions", h.GetLessonReactionsAPI).Methods("GET")
+
+	// Admin — activity journal
+	r.HandleFunc("/admin/journal", adminMiddleware(adminService.HandleJournalPage)).Methods("GET")
+	r.HandleFunc("/api/admin/journal", adminMiddleware(adminService.GetJournalAPI)).Methods("GET")
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"

@@ -110,6 +110,21 @@
         </div>
     </footer>
 
+    <!-- REACTIONS -->
+    <div class="max-w-3xl mx-auto border-t border-stone-200 py-6 flex items-center gap-3">
+        <button id="btn-like" onclick="sendReaction('like')"
+            class="flex items-center gap-2 px-5 py-2.5 rounded-full border text-sm font-semibold transition focus:outline-none">
+            <i class="fas fa-thumbs-up"></i>
+            <span id="like-count">0</span>
+        </button>
+        <button id="btn-dislike" onclick="sendReaction('dislike')"
+            class="flex items-center gap-2 px-5 py-2.5 rounded-full border text-sm font-semibold transition focus:outline-none">
+            <i class="fas fa-thumbs-down"></i>
+            <span id="dislike-count">0</span>
+        </button>
+        <span id="reaction-hint" class="text-xs text-gray-400 ml-2"></span>
+    </div>
+
     <!-- COMMENTS SECTION -->
     <section class="max-w-3xl mx-auto border-t border-stone-200 pt-10">
         <h3 class="text-2xl font-bold text-gray-900 mb-6">{{ T .Lang "lesson.discussion" }}</h3>
@@ -381,6 +396,60 @@
         const m = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
         return String(s).replace(/[&<>"']/g, c => m[c]);
     }
+
+    // --- REACTIONS ---
+    const isAuth = {{if .IsAuthenticated}}true{{else}}false{{end}};
+
+    async function loadReactions() {
+        try {
+            const res = await fetch(`/api/lessons/${lessonId}/reactions`);
+            const data = await res.json();
+            applyReactionUI(data.likes, data.dislikes, data.user_reaction);
+        } catch(e) {}
+    }
+
+    function applyReactionUI(likes, dislikes, userReaction) {
+        document.getElementById('like-count').textContent = likes;
+        document.getElementById('dislike-count').textContent = dislikes;
+
+        const btnLike    = document.getElementById('btn-like');
+        const btnDislike = document.getElementById('btn-dislike');
+        const activeClass   = ['bg-indigo-600','text-white','border-indigo-600'];
+        const inactiveClass = ['bg-white','text-gray-600','border-gray-300','hover:border-indigo-400'];
+
+        [btnLike, btnDislike].forEach(b => {
+            activeClass.forEach(c => b.classList.remove(c));
+            inactiveClass.forEach(c => b.classList.add(c));
+        });
+
+        if (userReaction === 'like') {
+            inactiveClass.forEach(c => btnLike.classList.remove(c));
+            activeClass.forEach(c => btnLike.classList.add(c));
+        } else if (userReaction === 'dislike') {
+            inactiveClass.forEach(c => btnDislike.classList.remove(c));
+            activeClass.forEach(c => btnDislike.classList.add(c));
+        }
+    }
+
+    async function sendReaction(type) {
+        if (!isAuth) {
+            window.location.href = '/auth/google/login';
+            return;
+        }
+        try {
+            const res = await fetch(`/api/lessons/${lessonId}/react`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type })
+            });
+            if (res.ok) {
+                const data = await res.json();
+                applyReactionUI(data.likes, data.dislikes, data.user_reaction);
+            }
+        } catch(e) {}
+    }
+
+    loadReactions();
 </script>
 </body>
 </html>

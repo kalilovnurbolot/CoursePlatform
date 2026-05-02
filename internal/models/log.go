@@ -10,6 +10,8 @@ const (
 	LogQuizAttempt     = "quiz_attempt"
 	LogCourseComplete  = "course_complete"
 	LogReviewAdded     = "review_added"
+	LogCommentAdded    = "comment_added"
+	LogReactionAdded   = "reaction_added"
 )
 
 // UserLog хранит историю действий пользователя

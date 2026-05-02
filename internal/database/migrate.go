@@ -20,6 +20,7 @@ func AutoMigrate(db *gorm.DB) error {
 		&models.Review{},
 		&models.Certificate{},
 		&models.UserLog{},
+		&models.Reaction{},
 	); err != nil {
 		return err
 	}

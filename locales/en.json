@@ -491,5 +491,33 @@
 
   "meta.desc.home": "Online learning platform in Russian, English and Kyrgyz. Courses on programming, design and more. Free access to selected materials.",
   "meta.desc.about": "Learn about CoursePlatform — our mission, features for students and authors, and how to start learning today.",
-  "meta.desc.certificate": "Verify the authenticity of a course completion certificate issued by CoursePlatform."
+  "meta.desc.certificate": "Verify the authenticity of a course completion certificate issued by CoursePlatform.",
+
+  "reaction.like": "Like",
+  "reaction.dislike": "Dislike",
+  "reaction.liked": "Liked",
+  "reaction.disliked": "Disliked",
+  "reaction.login_to_react": "Sign in to react",
+
+  "comment.course_discussion": "Course discussion",
+  "comment.course_placeholder": "Share your thoughts on this course...",
+
+  "admin.journal_nav": "Journal",
+  "admin.journal_title": "Activity Journal",
+  "admin.journal_subtitle": "All user actions on the platform",
+  "admin.journal_action": "Action",
+  "admin.journal_user": "User",
+  "admin.journal_details": "Details",
+  "admin.journal_date": "Date",
+  "admin.journal_filter_all": "All actions",
+  "admin.journal_login": "Login",
+  "admin.journal_lesson_view": "Lesson view",
+  "admin.journal_comment": "Comment",
+  "admin.journal_reaction": "Reaction",
+  "admin.journal_quiz": "Quiz attempt",
+  "admin.journal_complete": "Course complete",
+  "admin.journal_review": "Review",
+  "admin.journal_empty": "No activity records found.",
+  "admin.journal_loading": "Loading...",
+  "admin.journal_total": "{n} records"
 }

@@ -491,5 +491,33 @@
 
   "meta.desc.home": "Онлайн-платформа для обучения на русском, английском и кыргызском языках. Курсы по программированию, дизайну и другим направлениям. Часть материалов — бесплатно.",
   "meta.desc.about": "Узнайте о платформе CoursePlatform — миссии, возможностях для студентов и авторов, как начать обучение прямо сейчас.",
-  "meta.desc.certificate": "Проверка подлинности сертификата об окончании курса на платформе CoursePlatform."
+  "meta.desc.certificate": "Проверка подлинности сертификата об окончании курса на платформе CoursePlatform.",
+
+  "reaction.like": "Нравится",
+  "reaction.dislike": "Не нравится",
+  "reaction.liked": "Понравилось",
+  "reaction.disliked": "Не понравилось",
+  "reaction.login_to_react": "Войдите, чтобы оценить",
+
+  "comment.course_discussion": "Обсуждение курса",
+  "comment.course_placeholder": "Поделитесь своим мнением о курсе...",
+
+  "admin.journal_nav": "Журнал",
+  "admin.journal_title": "Журнал активности",
+  "admin.journal_subtitle": "Все действия пользователей на платформе",
+  "admin.journal_action": "Действие",
+  "admin.journal_user": "Пользователь",
+  "admin.journal_details": "Детали",
+  "admin.journal_date": "Дата",
+  "admin.journal_filter_all": "Все действия",
+  "admin.journal_login": "Вход",
+  "admin.journal_lesson_view": "Просмотр урока",
+  "admin.journal_comment": "Комментарий",
+  "admin.journal_reaction": "Реакция",
+  "admin.journal_quiz": "Тест",
+  "admin.journal_complete": "Курс завершён",
+  "admin.journal_review": "Отзыв",
+  "admin.journal_empty": "Записи активности не найдены.",
+  "admin.journal_loading": "Загрузка...",
+  "admin.journal_total": "{n} записей"
 }

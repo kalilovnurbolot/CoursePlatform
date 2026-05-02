@@ -38,6 +38,11 @@
                     {{$usersNavClass := "text-slate-300 hover:bg-slate-800 hover:text-white"}}
                     {{if eq .CurrentPath $usersNavPath}}{{$usersNavClass = "bg-slate-800 text-white"}}{{end}}
                     <a href="{{$usersNavPath}}" class="px-3 py-2 rounded-md text-xs font-medium transition {{$usersNavClass}}"><i class="fas fa-users mr-1"></i>{{ T .Lang "admin.users_nav" }}</a>
+
+                    {{$journalPath := "/admin/journal"}}
+                    {{$journalClass := "text-slate-300 hover:bg-slate-800 hover:text-white"}}
+                    {{if eq .CurrentPath $journalPath}}{{$journalClass = "bg-slate-800 text-white"}}{{end}}
+                    <a href="{{$journalPath}}" class="px-3 py-2 rounded-md text-xs font-medium transition {{$journalClass}}"><i class="fas fa-clipboard-list mr-1"></i>{{ T .Lang "admin.journal_nav" }}</a>
                 </nav>
             </div>
 

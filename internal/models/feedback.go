@@ -6,7 +6,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// Comment - Комментарий к уроку
+// Comment - Комментарий к уроку или курсу
 type Comment struct {
 	ID        uint           `gorm:"primarykey" json:"id"`
 	CreatedAt time.Time      `json:"created_at"`
@@ -14,7 +14,8 @@ type Comment struct {
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
 
 	UserID   uint   `json:"user_id"`
-	LessonID uint   `json:"lesson_id"`
+	LessonID uint   `json:"lesson_id"` // >0 → комментарий к уроку
+	CourseID uint   `json:"course_id"` // >0 → комментарий к курсу
 	Content  string `json:"content"`
 
 	User User `json:"user" gorm:"foreignKey:UserID"`
