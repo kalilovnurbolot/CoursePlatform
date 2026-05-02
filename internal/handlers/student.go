@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -153,9 +154,14 @@ func (s *Handler) HandleCourseLearn(w http.ResponseWriter, r *http.Request) {
 
 	// 5. ПОДГОТОВКА ДАННЫХ
 	lang := s.DetectLang(r)
+	courseURL := canonicalURL(r)
 	data := PageData{
-		Title:           course.Title,
-		Course:          course,
+		Title:        course.Title,
+		Description:  truncate(course.Description, 160),
+		CanonicalURL: courseURL,
+		OGImage:      course.ImageURL,
+		JSONLD:       JSONLDCourse(course, courseURL),
+		Course:       course,
 		IsAuthenticated: userID != 0,
 		UserName:        toString(session.Values["name"]),
 		UserPictureURL:  toString(session.Values["picture_url"]),
@@ -240,9 +246,15 @@ func (s *Handler) HandleLessonView(w http.ResponseWriter, r *http.Request) {
 
 	session, _ := s.Store.Get(r, "session")
 	lang := s.DetectLang(r)
+	lessonURL := canonicalURL(r)
+	courseLearnURL := fmt.Sprintf("%s/course/%d/learn", siteBaseURL(), course.ID)
 	data := PageData{
-		Title:           lesson.Title,
-		Course:          course,
+		Title:        lesson.Title,
+		Description:  truncate(lesson.Title+" — "+course.Title+" | CoursePlatform", 160),
+		CanonicalURL: lessonURL,
+		OGImage:      course.ImageURL,
+		JSONLD:       JSONLDLesson(lesson, course, lessonURL, courseLearnURL),
+		Course:       course,
 		Lesson:          lesson,
 		IsAuthenticated: userID != 0,
 		NextLessonID:    nextID,

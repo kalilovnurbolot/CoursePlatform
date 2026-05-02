@@ -88,6 +88,8 @@ func (h *Handler) HandleVerifyCertificate(w http.ResponseWriter, r *http.Request
 
 	data := PageData{
 		Title:           i18n.T(lang, "cert.verify_title"),
+		Description:     i18n.T(lang, "meta.desc.certificate"),
+		CanonicalURL:    canonicalURL(r),
 		IsAuthenticated: userID != 0,
 		UserName:        toString(session.Values["name"]),
 		UserPictureURL:  toString(session.Values["picture_url"]),

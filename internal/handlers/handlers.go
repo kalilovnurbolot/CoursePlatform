@@ -39,6 +39,16 @@ func NewHandler(db *gorm.DB, store *sessions.CookieStore, config *oauth2.Config)
 			return t.Format("02.01.2006 в 15:04")
 		},
 		"T": i18n.T,
+		"ogLocale": func(lang string) string {
+			switch lang {
+			case "en":
+				return "en_US"
+			case "ky":
+				return "ky_KG"
+			default:
+				return "ru_RU"
+			}
+		},
 	}
 
 	tmpl := template.New("").Funcs(funcMap)
@@ -62,7 +72,11 @@ func NewHandler(db *gorm.DB, store *sessions.CookieStore, config *oauth2.Config)
 }
 
 type PageData struct {
-	Title           string
+	Title        string
+	Description  string
+	CanonicalURL string
+	OGImage      string
+	JSONLD       template.JS
 	IsAuthenticated bool
 	UserID          uint
 	RoleID          uint
@@ -160,6 +174,9 @@ func (h *Handler) HandleMain(w http.ResponseWriter, r *http.Request) {
 
 	data := PageData{
 		Title:           i18n.T(lang, "nav.home"),
+		Description:     i18n.T(lang, "meta.desc.home"),
+		CanonicalURL:    canonicalURL(r),
+		JSONLD:          JSONLDHome(),
 		IsAuthenticated: userID != 0,
 		UserID:          userID,
 		RoleID:          roleID,
@@ -304,6 +321,15 @@ func toString(v interface{}) string {
 	return s
 }
 
+// truncate обрезает строку до maxLen символов, добавляя "…" если нужно.
+func truncate(s string, maxLen int) string {
+	runes := []rune(s)
+	if len(runes) <= maxLen {
+		return s
+	}
+	return string(runes[:maxLen-1]) + "…"
+}
+
 // logAction записывает действие пользователя в таблицу user_logs.
 func (h *Handler) logAction(userID uint, action, details string, courseID, lessonID uint) {
 	entry := models.UserLog{
@@ -325,6 +351,8 @@ func (h *Handler) HandleAboutPage(w http.ResponseWriter, r *http.Request) {
 
 	data := PageData{
 		Title:           i18n.T(lang, "about.title"),
+		Description:     i18n.T(lang, "meta.desc.about"),
+		CanonicalURL:    canonicalURL(r),
 		IsAuthenticated: userID != 0,
 		UserID:          userID,
 		RoleID:          roleID,

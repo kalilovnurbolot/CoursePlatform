@@ -64,8 +64,12 @@ func (h *Handler) HandleUserProfilePage(w http.ResponseWriter, r *http.Request) 
 		Where("author_id = ? AND admin_status = ? AND is_published = ?", profileUser.ID, "approved", true).
 		Count(&authoredCount)
 
+	profileURL := canonicalURL(r)
 	data := PageData{
 		Title:           profileUser.Name,
+		Description:     truncate(profileUser.Name+" — "+i18n.T(lang, "userprofile.author_label")+" | CoursePlatform", 160),
+		CanonicalURL:    profileURL,
+		JSONLD:          JSONLDPerson(profileUser, profileURL),
 		IsAuthenticated: viewerID != 0,
 		UserID:          viewerID,
 		RoleID:          roleID,

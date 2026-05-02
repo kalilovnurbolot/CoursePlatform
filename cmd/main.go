@@ -73,6 +73,9 @@ func main() {
 	r := mux.NewRouter()
 	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
 
+	r.HandleFunc("/robots.txt", h.HandleRobotsTxt).Methods("GET")
+	r.HandleFunc("/sitemap.xml", h.HandleSitemapXML).Methods("GET")
+
 	r.HandleFunc("/", h.HandleMain).Methods("GET")
 	r.HandleFunc("/about", h.HandleAboutPage).Methods("GET")
 	r.HandleFunc("/api/home", h.GetHomeDataAPI).Methods("GET")

@@ -487,5 +487,9 @@
   "home.badge_open": "OPEN",
   "home.clear_search": "Clear search",
   "home.page_prev": "Prev",
-  "home.page_next": "Next"
+  "home.page_next": "Next",
+
+  "meta.desc.home": "Online learning platform in Russian, English and Kyrgyz. Courses on programming, design and more. Free access to selected materials.",
+  "meta.desc.about": "Learn about CoursePlatform — our mission, features for students and authors, and how to start learning today.",
+  "meta.desc.certificate": "Verify the authenticity of a course completion certificate issued by CoursePlatform."
 }

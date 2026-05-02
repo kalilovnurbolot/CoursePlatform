@@ -4,11 +4,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{.Title}}</title>
+    <title>{{.Title}} | CoursePlatform</title>
+    {{if .Description}}<meta name="description" content="{{.Description}}">{{end}}
+    {{if .CanonicalURL}}<link rel="canonical" href="{{.CanonicalURL}}">
+    <link rel="alternate" hreflang="ru" href="{{.CanonicalURL}}">
+    <link rel="alternate" hreflang="en" href="{{.CanonicalURL}}">
+    <link rel="alternate" hreflang="ky" href="{{.CanonicalURL}}">
+    <link rel="alternate" hreflang="x-default" href="{{.CanonicalURL}}">{{end}}
+    <!-- Open Graph -->
+    <meta property="og:site_name" content="CoursePlatform">
+    <meta property="og:type" content="profile">
+    <meta property="og:title" content="{{.Title}} | CoursePlatform">
+    {{if .Description}}<meta property="og:description" content="{{.Description}}">{{end}}
+    {{if .CanonicalURL}}<meta property="og:url" content="{{.CanonicalURL}}">{{end}}
+    {{if .ProfileUser}}{{if .ProfileUser.Picture}}<meta property="og:image" content="{{.ProfileUser.Picture}}">{{end}}{{end}}
+    <meta property="og:locale" content="{{ogLocale .Lang}}">
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="{{.Title}} | CoursePlatform">
+    {{if .Description}}<meta name="twitter:description" content="{{.Description}}">{{end}}
+    {{if .ProfileUser}}{{if .ProfileUser.Picture}}<meta name="twitter:image" content="{{.ProfileUser.Picture}}">{{end}}{{end}}
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script>const I18N = {{.TransJSON}};</script>
     <script>function t(k){return I18N[k]||k;}</script>
+    {{if .JSONLD}}<script type="application/ld+json">{{.JSONLD}}</script>{{end}}
 </head>
 <body class="bg-slate-50 min-h-screen">
 {{template "header" .}}
