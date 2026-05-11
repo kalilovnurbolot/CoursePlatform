@@ -819,7 +819,7 @@
         let innerHTML = '';
         let icon = '';
         let label = '';
-        const valContent = data ? data.content || '' : '';
+        const valContent = data ? (data.content || data.url || '') : '';
 
         if (type === 'text') {
             icon = 'fa-align-left'; label = t('admin.course_block_text');
@@ -828,8 +828,22 @@
             icon = 'fa-code'; label = t('admin.course_block_code');
             innerHTML = `<textarea class="block-content w-full bg-[#1e1e1e] text-[#d4d4d4] p-3 rounded text-sm font-mono focus:ring-2 focus:ring-indigo-500 focus:outline-none transition" rows="4" placeholder="// Code...">${valContent}</textarea>`;
         } else if (type === 'video') {
-            icon = 'fa-video'; label = 'YouTube';
-            innerHTML = `<div class="flex items-center gap-2 border border-gray-300 p-2 rounded bg-white"><i class="fab fa-youtube text-red-500 text-lg"></i><input type="text" class="block-content w-full text-sm focus:outline-none" placeholder="${t('admin.course_video_placeholder')}" value="${valContent}"></div>`;
+            icon = 'fab fa-youtube'; label = 'YouTube';
+            const initId = adminExtractYoutubeId(valContent);
+            const borderCls = initId ? 'border-green-400' : 'border-gray-300';
+            const statusTxt = initId ? '✓' : '';
+            const statusCls = initId ? 'text-green-600' : '';
+            const previewHtml = initId
+              ? `<div class="video-preview mt-2 aspect-video rounded-lg overflow-hidden bg-black"><iframe class="w-full h-full" src="https://www.youtube.com/embed/${initId}" frameborder="0" allowfullscreen></iframe></div>`
+              : `<div class="video-preview mt-2 aspect-video rounded-lg overflow-hidden bg-black hidden"><iframe class="w-full h-full" frameborder="0" allowfullscreen></iframe></div>`;
+            innerHTML = `<div>
+              <div class="flex items-center gap-2 border ${borderCls} p-2 rounded bg-white transition video-input-wrap">
+                <i class="fab fa-youtube text-red-500 text-lg shrink-0"></i>
+                <input type="text" class="block-content w-full text-sm focus:outline-none" placeholder="${t('admin.course_video_placeholder')}" value="${valContent}" oninput="adminVideoInput(this)">
+                <span class="video-status text-sm font-bold shrink-0 ${statusCls}">${statusTxt}</span>
+              </div>
+              ${previewHtml}
+            </div>`;
 
         } else if (type === 'quiz') {
             icon = 'fa-list-check'; label = t('admin.course_block_quiz');
@@ -951,6 +965,32 @@
                 container.innerHTML = `<div class="text-center py-10 text-gray-300 border-2 border-dashed border-gray-200 rounded-lg">${t('admin.course_lesson_empty')}</div>`;
             }
         }, 200);
+    }
+
+    function adminExtractYoutubeId(url) {
+        const m = (url || '').match(/^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/);
+        return (m && m[2].length === 11) ? m[2] : null;
+    }
+
+    function adminVideoInput(input) {
+        const val = input.value.trim();
+        const id      = adminExtractYoutubeId(val);
+        const wrap    = input.closest('.content-block');
+        const inpWrap = wrap ? wrap.querySelector('.video-input-wrap') : null;
+        const status  = wrap ? wrap.querySelector('.video-status') : null;
+        const preview = wrap ? wrap.querySelector('.video-preview') : null;
+        const iframe  = preview ? preview.querySelector('iframe') : null;
+        if (id) {
+            if (inpWrap) { inpWrap.classList.remove('border-gray-300', 'border-red-400'); inpWrap.classList.add('border-green-400'); }
+            if (status)  { status.textContent = '✓'; status.className = 'video-status text-sm font-bold shrink-0 text-green-600'; }
+            if (preview) preview.classList.remove('hidden');
+            if (iframe)  iframe.src = `https://www.youtube.com/embed/${id}`;
+        } else {
+            if (inpWrap) { inpWrap.classList.remove('border-green-400'); inpWrap.classList.add(val ? 'border-red-400' : 'border-gray-300'); }
+            if (status)  { status.textContent = val ? '✗' : ''; status.className = `video-status text-sm font-bold shrink-0 ${val ? 'text-red-500' : ''}`; }
+            if (preview) preview.classList.add('hidden');
+            if (iframe)  iframe.src = '';
+        }
     }
 
     function addQuizOption(btn, value = '', isCorrect = false) {

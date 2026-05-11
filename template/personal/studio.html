@@ -747,7 +747,22 @@ function buildBlockEl(b, idx) {
   } else if (b.type === 'code') {
     inner = `<textarea class="w-full border border-slate-200 rounded-lg p-2.5 text-sm font-mono resize-y min-h-[100px] bg-slate-50 focus:ring-2 focus:ring-green-400 focus:outline-none" placeholder="// code..." oninput="markDirty(${idx}, 'code', this.value)">${escHtml(b.data.code || '')}</textarea>`;
   } else if (b.type === 'video') {
-    inner = `<input class="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-red-400 focus:outline-none" placeholder="${t('admin.course_video_placeholder')}" value="${escHtml(b.data.url || '')}" oninput="markDirty(${idx}, 'url', this.value)">`;
+    const initUrl = b.data.content || b.data.url || '';
+    const initId  = extractYoutubeId(initUrl);
+    const borderCls = initId ? 'border-green-400' : 'border-slate-200';
+    const statusTxt = initId ? '✓' : '';
+    const statusCls = initId ? 'text-green-600' : '';
+    const previewHtml = initId
+      ? `<div class="video-preview mt-2 aspect-video rounded-lg overflow-hidden bg-black"><iframe class="w-full h-full" src="https://www.youtube.com/embed/${initId}" frameborder="0" allowfullscreen></iframe></div>`
+      : `<div class="video-preview mt-2 aspect-video rounded-lg overflow-hidden bg-black hidden"><iframe class="w-full h-full" frameborder="0" allowfullscreen></iframe></div>`;
+    inner = `<div>
+      <div class="flex items-center gap-2">
+        <i class="fab fa-youtube text-red-500 text-lg shrink-0"></i>
+        <input class="video-url-input w-full border ${borderCls} rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-red-400 focus:outline-none transition" placeholder="${t('admin.course_video_placeholder')}" value="${escHtml(initUrl)}" oninput="studioVideoInput(${idx}, this)">
+        <span class="video-status text-sm font-bold shrink-0 ${statusCls}">${statusTxt}</span>
+      </div>
+      ${previewHtml}
+    </div>`;
   } else if (b.type === 'quiz') {
     inner = buildQuizEditor(b, idx);
   } else if (b.type === 'vocabulary') {
@@ -815,7 +830,7 @@ function openTypeModal(afterIdx) {
 function addBlock(type, afterIdx) {
   document.getElementById('type-modal').classList.add('hidden');
   const defaults = {
-    text: {text:''}, code: {code:''}, video: {url:''},
+    text: {text:''}, code: {code:''}, video: {content:''},
     quiz: {question:'', options:['',''], correct_index:0},
     vocabulary: {title:'', words:[]},
     audio_dictation: {text:''}
@@ -849,6 +864,34 @@ function markDirty(idx, field, val) {
   blocks[idx].data[field] = val;
   blocks[idx]._dirty = true;
   dirty = true;
+}
+
+function extractYoutubeId(url) {
+  const m = (url || '').match(/^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/);
+  return (m && m[2].length === 11) ? m[2] : null;
+}
+
+function studioVideoInput(idx, input) {
+  const val = input.value.trim();
+  markDirty(idx, 'content', val);
+  const id      = extractYoutubeId(val);
+  const wrap    = input.closest('.content-block');
+  const status  = wrap ? wrap.querySelector('.video-status') : null;
+  const preview = wrap ? wrap.querySelector('.video-preview') : null;
+  const iframe  = preview ? preview.querySelector('iframe') : null;
+  if (id) {
+    input.classList.remove('border-red-400', 'border-slate-200');
+    input.classList.add('border-green-400');
+    if (status)  { status.textContent = '✓'; status.className = 'video-status text-sm font-bold shrink-0 text-green-600'; }
+    if (preview) preview.classList.remove('hidden');
+    if (iframe)  iframe.src = `https://www.youtube.com/embed/${id}`;
+  } else {
+    input.classList.remove('border-green-400');
+    input.classList.add(val ? 'border-red-400' : 'border-slate-200');
+    if (status)  { status.textContent = val ? '✗' : ''; status.className = `video-status text-sm font-bold shrink-0 ${val ? 'text-red-500' : ''}`; }
+    if (preview) preview.classList.add('hidden');
+    if (iframe)  iframe.src = '';
+  }
 }
 
 // Quiz helpers

@@ -192,8 +192,13 @@
                 } else if (type === 'code') {
                     el.innerHTML = `<pre class="bg-slate-900 text-indigo-100 p-5 rounded-2xl overflow-x-auto font-mono text-sm"><code>${escapeHtml(data.content)}</code></pre>`;
                 } else if (type === 'video') {
-                    const videoId = extractYoutubeId(data.content);
-                    el.innerHTML = `<div class="aspect-video rounded-2xl overflow-hidden bg-black shadow-xl"><iframe class="w-full h-full" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen></iframe></div>`;
+                    const rawUrl = data.content || data.url || '';
+                    const videoId = extractYoutubeId(rawUrl);
+                    if (videoId) {
+                        el.innerHTML = `<div class="aspect-video rounded-2xl overflow-hidden bg-black shadow-xl"><iframe class="w-full h-full" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen></iframe></div>`;
+                    } else {
+                        el.innerHTML = `<div class="aspect-video rounded-2xl overflow-hidden bg-slate-100 shadow-xl flex items-center justify-center text-slate-400 text-sm gap-2"><i class="fab fa-youtube text-2xl"></i><span>{{ T .Lang "lesson.video_invalid" }}</span></div>`;
+                    }
                 } else if (type === 'vocabulary') {
                     el.innerHTML = renderVocabulary(data);
                 } else if (type === 'audio_dictation') {
