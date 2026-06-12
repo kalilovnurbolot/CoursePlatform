@@ -731,7 +731,13 @@ function renderBlocks() {
     area.innerHTML = `<div class="text-center text-gray-400 mt-10">${t('admin.course_lesson_empty')}</div>`;
     return;
   }
-  blocks.forEach((b, idx) => area.appendChild(buildBlockEl(b, idx)));
+  blocks.forEach((b, idx) => {
+    area.appendChild(buildBlockEl(b, idx));
+    if (b.type === 'html_preview') {
+      const frame = document.getElementById(`html-frame-${idx}`);
+      if (frame) frame.srcdoc = b.data.content || '';
+    }
+  });
 }
 
 function buildBlockEl(b, idx) {
@@ -782,12 +788,14 @@ function buildBlockEl(b, idx) {
       <textarea class="w-full border border-slate-200 rounded-lg p-2.5 text-sm resize-y min-h-[60px] focus:ring-2 focus:ring-pink-400 focus:outline-none" oninput="markDirty(${idx}, 'text', this.value)">${escHtml(b.data.text || '')}</textarea>`;
   } else if (b.type === 'html_preview') {
     const code = b.data.content || '';
-    const encoded = encodeURIComponent(code);
     inner = `<p class="text-xs text-gray-400 mb-1">${t('studio.html_hint')}</p>
       <textarea id="html-src-${idx}" class="w-full border border-slate-200 rounded-lg p-2.5 text-sm font-mono resize-y min-h-[120px] bg-slate-50 focus:ring-2 focus:ring-orange-400 focus:outline-none" placeholder="<h1>Hello</h1>&#10;<style>h1{color:red}</style>&#10;<script>console.log('hi')<\/script>" oninput="updateHtmlPreview(${idx}, this.value)">${escHtml(code)}</textarea>
       <div class="mt-2 rounded-xl overflow-hidden border border-slate-200 bg-white">
-        <div class="text-[10px] font-bold uppercase tracking-wider text-orange-500 px-3 py-1.5 border-b border-slate-100">${t('lesson.html_preview_result')}</div>
-        <iframe id="html-frame-${idx}" class="w-full" style="height:200px;border:none;" srcdoc="${escHtml(code)}" sandbox="allow-scripts"></iframe>
+        <div class="flex items-center justify-between px-3 py-1.5 border-b border-slate-100">
+          <span class="text-[10px] font-bold uppercase tracking-wider text-orange-500">${t('lesson.html_preview_result')}</span>
+          <button onclick="studioOpenHtmlFull(${idx})" class="flex items-center gap-1 px-2 py-0.5 bg-orange-100 hover:bg-orange-200 text-orange-600 text-[10px] font-semibold rounded transition"><i class="fas fa-external-link-alt"></i> ${t('lesson.html_open_full')}</button>
+        </div>
+        <iframe id="html-frame-${idx}" class="w-full bg-white" style="height:240px;border:none;" sandbox="allow-scripts allow-same-origin"></iframe>
       </div>`;
   } else if (b.type === 'attachment') {
     const fname = b.data.filename || '';
@@ -909,6 +917,15 @@ function updateHtmlPreview(idx, code) {
   dirty = true;
   const frame = document.getElementById(`html-frame-${idx}`);
   if (frame) frame.srcdoc = code;
+}
+
+function studioOpenHtmlFull(idx) {
+  const code = (blocks[idx] && blocks[idx].data.content) || '';
+  const blob = new Blob([code], { type: 'text/html; charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const win  = window.open(url, '_blank');
+  if (win) win.addEventListener('load', () => URL.revokeObjectURL(url), { once: true });
+  else URL.revokeObjectURL(url);
 }
 
 function formatBytes(bytes) {

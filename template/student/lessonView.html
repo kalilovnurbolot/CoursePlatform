@@ -206,12 +206,24 @@
                     el.innerHTML = renderAudioDictation(data, blockId, previous);
                 } else if (type === 'html_preview') {
                     const code = data.content || '';
+                    _htmlBlockData[blockId] = code;
+                    const frameId = `hpf-${blockId}`;
                     el.innerHTML = `<div class="rounded-2xl overflow-hidden border border-slate-200 shadow-sm">
-                        <div class="flex items-center gap-2 px-4 py-2 bg-orange-50 border-b border-orange-100 text-xs font-bold uppercase tracking-wider text-orange-500">
-                            <i class="fas fa-eye"></i> ${t('lesson.html_preview_result')}
+                        <div class="flex items-center justify-between gap-2 px-4 py-2 bg-orange-50 border-b border-orange-100">
+                            <span class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-orange-500">
+                                <i class="fas fa-eye"></i> ${t('lesson.html_preview_result')}
+                            </span>
+                            <button onclick="openHtmlFull(${blockId})" class="flex items-center gap-1.5 px-3 py-1 bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold rounded-lg transition">
+                                <i class="fas fa-external-link-alt text-[10px]"></i> ${t('lesson.html_open_full')}
+                            </button>
                         </div>
-                        <iframe class="w-full bg-white" style="min-height:200px;border:none;" srcdoc="${code.replace(/"/g,'&quot;')}" sandbox="allow-scripts" onload="autoResizeFrame(this)"></iframe>
+                        <iframe id="${frameId}" class="w-full bg-white" style="height:320px;border:none;" sandbox="allow-scripts allow-same-origin"></iframe>
                     </div>`;
+                    const frame = document.getElementById(frameId);
+                    if (frame) {
+                        frame.srcdoc = code;
+                        frame.onload = () => autoResizeFrame(frame);
+                    }
                 } else if (type === 'attachment') {
                     const fname = data.filename || '';
                     const furl  = data.url || '';
@@ -440,8 +452,21 @@
     function autoResizeFrame(frame) {
         try {
             const h = frame.contentDocument.body.scrollHeight;
-            if (h > 50) frame.style.height = Math.min(h + 24, 800) + 'px';
+            if (h > 50) frame.style.height = Math.min(h + 24, 600) + 'px';
         } catch(e) {}
+    }
+
+    // htmlBlockData stores code per block id so openHtmlFull can access it
+    const _htmlBlockData = {};
+
+    function openHtmlFull(blockId) {
+        const code = _htmlBlockData[blockId] || '';
+        const blob = new Blob([code], { type: 'text/html; charset=utf-8' });
+        const url  = URL.createObjectURL(blob);
+        const win  = window.open(url, '_blank');
+        // revoke after the tab has loaded to free memory
+        if (win) win.addEventListener('load', () => URL.revokeObjectURL(url), { once: true });
+        else URL.revokeObjectURL(url);
     }
 
     // --- REACTIONS ---
