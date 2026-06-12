@@ -139,6 +139,8 @@ func main() {
 	r.HandleFunc("/api/studio/lessons/{id:[0-9]+}", userMiddleware(h.StudioDeleteLessonAPI)).Methods("DELETE")
 	r.HandleFunc("/api/studio/lessons/{id:[0-9]+}", userMiddleware(h.StudioGetLessonAPI)).Methods("GET")
 	r.HandleFunc("/api/studio/lessons/{id:[0-9]+}/content", userMiddleware(h.StudioUpdateLessonContentAPI)).Methods("PUT")
+	r.HandleFunc("/api/studio/courses/{id:[0-9]+}/enrollments", userMiddleware(h.StudioGetCourseEnrollmentsAPI)).Methods("GET")
+	r.HandleFunc("/api/studio/enrollments/{id:[0-9]+}", userMiddleware(h.StudioUpdateEnrollmentAPI)).Methods("PUT")
 	r.HandleFunc("/api/studio/upload", userMiddleware(h.StudioUploadFileAPI)).Methods("POST")
 
 	// Admin — course review requests

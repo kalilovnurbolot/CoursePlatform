@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -577,6 +578,92 @@ func (h *Handler) StudioGetCourseStructureAPI(w http.ResponseWriter, r *http.Req
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(course)
+}
+
+// GET /api/studio/courses/{id}/enrollments
+func (h *Handler) StudioGetCourseEnrollmentsAPI(w http.ResponseWriter, r *http.Request) {
+	userID, ok := h.GetAuthenticatedUserID(r)
+	if !ok {
+		studioJSONError(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	id, _ := strconv.Atoi(mux.Vars(r)["id"])
+
+	var course models.Course
+	if err := h.DB.Select("id, author_id").First(&course, id).Error; err != nil {
+		studioJSONError(w, "Course not found", http.StatusNotFound)
+		return
+	}
+	if course.AuthorID != userID {
+		studioJSONError(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+
+	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
+	if page < 1 {
+		page = 1
+	}
+	const pageSize = 20
+	offset := (page - 1) * pageSize
+
+	q := h.DB.Model(&models.Enrollment{}).Preload("User").Where("course_id = ?", id)
+	if status := r.URL.Query().Get("status"); status != "" && status != "all" {
+		q = q.Where("status = ?", status)
+	}
+
+	var total int64
+	q.Count(&total)
+
+	var enrollments []models.Enrollment
+	q.Order("created_at desc").Limit(pageSize).Offset(offset).Find(&enrollments)
+
+	totalPages := int(math.Ceil(float64(total) / float64(pageSize)))
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"enrollments": enrollments,
+		"total":       total,
+		"page":        page,
+		"total_pages": totalPages,
+	})
+}
+
+// PUT /api/studio/enrollments/{id}
+func (h *Handler) StudioUpdateEnrollmentAPI(w http.ResponseWriter, r *http.Request) {
+	userID, ok := h.GetAuthenticatedUserID(r)
+	if !ok {
+		studioJSONError(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	id, _ := strconv.Atoi(mux.Vars(r)["id"])
+
+	var enrollment models.Enrollment
+	if err := h.DB.Preload("Course").First(&enrollment, id).Error; err != nil {
+		studioJSONError(w, "Enrollment not found", http.StatusNotFound)
+		return
+	}
+	if enrollment.Course.AuthorID != userID {
+		studioJSONError(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+
+	var input struct {
+		Status string `json:"status"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		studioJSONError(w, "Invalid JSON", http.StatusBadRequest)
+		return
+	}
+	if input.Status != "approved" && input.Status != "rejected" && input.Status != "pending" {
+		studioJSONError(w, "Invalid status", http.StatusBadRequest)
+		return
+	}
+
+	if err := h.DB.Model(&models.Enrollment{}).Where("id = ?", id).Update("status", input.Status).Error; err != nil {
+		studioJSONError(w, "Failed to update enrollment", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"status": input.Status})
 }
 
 // ─────────────────────────────────────────────
