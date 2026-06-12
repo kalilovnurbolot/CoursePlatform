@@ -250,7 +250,7 @@ func (s *Handler) HandleLessonView(w http.ResponseWriter, r *http.Request) {
 	courseLearnURL := fmt.Sprintf("%s/course/%d/learn", siteBaseURL(), course.ID)
 	data := PageData{
 		Title:        lesson.Title,
-		Description:  truncate(lesson.Title+" — "+course.Title+" | CoursePlatform", 160),
+		Description:  ExtractLessonDescription(lesson.ContentBlocks, truncate(lesson.Title+" — "+course.Title, 155)),
 		CanonicalURL: lessonURL,
 		OGImage:      course.ImageURL,
 		JSONLD:       JSONLDLesson(lesson, course, lessonURL, courseLearnURL),

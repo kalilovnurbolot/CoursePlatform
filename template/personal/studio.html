@@ -267,6 +267,14 @@
         <i class="fas fa-microphone text-pink-500 text-lg"></i>
         <span class="text-xs">{{ T .Lang "admin.course_block_audio" }}</span>
       </button>
+      <button onclick="addBlock('html_preview', insertAfterIdx)" class="flex flex-col items-center gap-2 p-3 sm:p-4 border rounded-xl hover:border-orange-400 hover:bg-orange-50 transition">
+        <i class="fas fa-eye text-orange-500 text-lg"></i>
+        <span class="text-xs">{{ T .Lang "studio.block_html_preview" }}</span>
+      </button>
+      <button onclick="addBlock('attachment', insertAfterIdx)" class="flex flex-col items-center gap-2 p-3 sm:p-4 border rounded-xl hover:border-teal-400 hover:bg-teal-50 transition">
+        <i class="fas fa-paperclip text-teal-500 text-lg"></i>
+        <span class="text-xs">{{ T .Lang "studio.block_attachment" }}</span>
+      </button>
     </div>
     <button onclick="document.getElementById('type-modal').classList.add('hidden')"
       class="mt-4 w-full border border-slate-200 text-slate-700 py-2.5 rounded-xl text-sm hover:bg-slate-50 transition font-medium">
@@ -738,6 +746,8 @@ function buildBlockEl(b, idx) {
     quiz:            'text-yellow-500',
     vocabulary:      'text-purple-500',
     audio_dictation: 'text-pink-500',
+    html_preview:    'text-orange-500',
+    attachment:      'text-teal-500',
   };
   const badgeCls = TYPE_BADGE[b.type] || 'text-slate-500';
 
@@ -770,6 +780,31 @@ function buildBlockEl(b, idx) {
   } else if (b.type === 'audio_dictation') {
     inner = `<label class="text-xs text-gray-400 block mb-1">${t('admin.course_audio_hint')}</label>
       <textarea class="w-full border border-slate-200 rounded-lg p-2.5 text-sm resize-y min-h-[60px] focus:ring-2 focus:ring-pink-400 focus:outline-none" oninput="markDirty(${idx}, 'text', this.value)">${escHtml(b.data.text || '')}</textarea>`;
+  } else if (b.type === 'html_preview') {
+    const code = b.data.content || '';
+    const encoded = encodeURIComponent(code);
+    inner = `<p class="text-xs text-gray-400 mb-1">${t('studio.html_hint')}</p>
+      <textarea id="html-src-${idx}" class="w-full border border-slate-200 rounded-lg p-2.5 text-sm font-mono resize-y min-h-[120px] bg-slate-50 focus:ring-2 focus:ring-orange-400 focus:outline-none" placeholder="<h1>Hello</h1>&#10;<style>h1{color:red}</style>&#10;<script>console.log('hi')<\/script>" oninput="updateHtmlPreview(${idx}, this.value)">${escHtml(code)}</textarea>
+      <div class="mt-2 rounded-xl overflow-hidden border border-slate-200 bg-white">
+        <div class="text-[10px] font-bold uppercase tracking-wider text-orange-500 px-3 py-1.5 border-b border-slate-100">${t('lesson.html_preview_result')}</div>
+        <iframe id="html-frame-${idx}" class="w-full" style="height:200px;border:none;" srcdoc="${escHtml(code)}" sandbox="allow-scripts"></iframe>
+      </div>`;
+  } else if (b.type === 'attachment') {
+    const fname = b.data.filename || '';
+    const furl  = b.data.url || '';
+    const fsize = b.data.size ? formatBytes(b.data.size) : '';
+    inner = `<div class="flex flex-col gap-2">
+      ${furl ? `<div class="flex items-center gap-2 p-2.5 bg-teal-50 border border-teal-200 rounded-lg text-sm">
+        <i class="fas fa-file text-teal-500"></i>
+        <span class="flex-1 truncate font-medium text-teal-800">${escHtml(fname)}</span>
+        ${fsize ? `<span class="text-xs text-teal-500 shrink-0">${fsize}</span>` : ''}
+      </div>` : `<div class="text-xs text-gray-400 italic">${t('studio.attachment_no_file')}</div>`}
+      <label class="cursor-pointer inline-flex items-center gap-2 px-3 py-2 bg-white border border-teal-300 text-teal-700 text-sm font-medium rounded-lg hover:bg-teal-50 transition w-fit">
+        <i class="fas fa-upload text-xs"></i>
+        <span id="attach-btn-label-${idx}">${furl ? t('studio.attachment_change') : t('studio.attachment_upload_btn')}</span>
+        <input type="file" class="hidden" onchange="uploadAttachment(${idx}, this)" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.html,.htm,.txt,.zip,.png,.jpg,.jpeg,.gif,.svg,.mp3,.mp4">
+      </label>
+    </div>`;
   }
 
   el.innerHTML = `
@@ -833,7 +868,9 @@ function addBlock(type, afterIdx) {
     text: {text:''}, code: {code:''}, video: {content:''},
     quiz: {question:'', options:['',''], correct_index:0},
     vocabulary: {title:'', words:[]},
-    audio_dictation: {text:''}
+    audio_dictation: {text:''},
+    html_preview: {content:''},
+    attachment: {filename:'', url:'', size:0, mime:''},
   };
   const nb = { id: 0, type, data: defaults[type] || {}, _dirty: true };
   if (afterIdx === null || afterIdx === undefined || afterIdx >= blocks.length - 1) {
@@ -864,6 +901,45 @@ function markDirty(idx, field, val) {
   blocks[idx].data[field] = val;
   blocks[idx]._dirty = true;
   dirty = true;
+}
+
+function updateHtmlPreview(idx, code) {
+  blocks[idx].data.content = code;
+  blocks[idx]._dirty = true;
+  dirty = true;
+  const frame = document.getElementById(`html-frame-${idx}`);
+  if (frame) frame.srcdoc = code;
+}
+
+function formatBytes(bytes) {
+  if (!bytes) return '';
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / 1048576).toFixed(1) + ' MB';
+}
+
+async function uploadAttachment(idx, input) {
+  const file = input.files[0];
+  if (!file) return;
+  const label = document.getElementById(`attach-btn-label-${idx}`);
+  if (label) label.textContent = t('studio.attachment_uploading');
+  const fd = new FormData();
+  fd.append('file', file);
+  try {
+    const res = await fetch('/api/studio/upload', { method: 'POST', body: fd });
+    if (!res.ok) throw new Error(await res.text());
+    const json = await res.json();
+    blocks[idx].data.filename = json.filename;
+    blocks[idx].data.url      = json.url;
+    blocks[idx].data.size     = json.size;
+    blocks[idx].data.mime     = json.mime;
+    blocks[idx]._dirty = true;
+    dirty = true;
+    renderBlocks();
+  } catch (e) {
+    alert('Upload failed: ' + e.message);
+    if (label) label.textContent = t('studio.attachment_upload_btn');
+  }
 }
 
 function extractYoutubeId(url) {

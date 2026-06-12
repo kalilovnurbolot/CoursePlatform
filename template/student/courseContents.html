@@ -73,10 +73,23 @@
     </div>
     {{end}}
 
+    <div class="relative mb-4">
+        <i class="fas fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none"></i>
+        <input id="lesson-search" type="search" autocomplete="off"
+               placeholder="{{ T .Lang "course.search_placeholder" }}"
+               class="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition"
+               oninput="filterLessons(this.value)">
+    </div>
+
+    <div id="no-results" class="hidden text-center py-10 text-slate-400 text-sm italic bg-white border border-slate-200 rounded-2xl">
+        <i class="fas fa-search-minus text-2xl mb-2 block opacity-30"></i>
+        {{ T .Lang "course.search_no_results" }}
+    </div>
+
     <div class="bg-white shadow-sm border border-slate-200 rounded-2xl overflow-hidden">
         <div class="divide-y divide-slate-100">
             {{range $index, $module := .Course.Modules}}
-            <div class="p-6">
+            <div class="module-section p-6">
                 <div class="flex items-center mb-5">
                     <span class="text-[10px] font-bold text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded uppercase tracking-widest mr-3">
                         {{ T $.Lang "course.chapter" }} {{add $index 1}}
@@ -88,6 +101,7 @@
                     {{range .Lessons}}
                     {{$isDone := index $.DoneLessonsMap .ID}}
                     <a href="/course/{{$.Course.ID}}/lesson/{{.ID}}"
+                       data-title="{{.Title}}"
                        class="lesson-row flex items-center justify-between p-2.5 -mx-2 rounded-xl transition-all group {{if $isDone}}bg-emerald-50/30{{else}}hover:bg-slate-50{{end}}">
 
                         <div class="flex items-center min-w-0">
@@ -100,7 +114,7 @@
                             </div>
 
                             <div class="truncate flex items-center gap-2">
-                                <span class="text-sm font-medium {{if $isDone}}text-slate-500{{else}}text-slate-700 group-hover:text-indigo-600{{end}}">
+                                <span class="lesson-title text-sm font-medium {{if $isDone}}text-slate-500{{else}}text-slate-700 group-hover:text-indigo-600{{end}}">
                                     {{.Title}}
                                 </span>
                                 {{if .IsFree}}
@@ -187,6 +201,45 @@
     const courseId = {{.Course.ID}};
     let currentRating = 0;
 
+    function filterLessons(query) {
+        const q = query.trim().toLowerCase();
+        const modules = document.querySelectorAll('.module-section');
+        let totalVisible = 0;
+
+        modules.forEach(mod => {
+            const rows = mod.querySelectorAll('.lesson-row');
+            let visibleInModule = 0;
+
+            rows.forEach(row => {
+                const title = (row.dataset.title || '').toLowerCase();
+                const match = !q || title.includes(q);
+                row.style.display = match ? '' : 'none';
+                if (match) {
+                    visibleInModule++;
+                    if (q) {
+                        const span = row.querySelector('.lesson-title');
+                        if (span) {
+                            const orig = row.dataset.title;
+                            const idx = orig.toLowerCase().indexOf(q);
+                            span.innerHTML = escapeHtml(orig.slice(0, idx))
+                                + `<mark class="bg-yellow-200 text-yellow-900 rounded px-0.5">${escapeHtml(orig.slice(idx, idx + q.length))}</mark>`
+                                + escapeHtml(orig.slice(idx + q.length));
+                        }
+                    } else {
+                        const span = row.querySelector('.lesson-title');
+                        if (span) span.textContent = row.dataset.title;
+                    }
+                }
+            });
+
+            mod.style.display = visibleInModule > 0 ? '' : 'none';
+            totalVisible += visibleInModule;
+        });
+
+        document.getElementById('no-results').classList.toggle('hidden', totalVisible > 0 || !q);
+        document.querySelector('.bg-white.shadow-sm').style.display = totalVisible > 0 ? '' : 'none';
+    }
+
     document.addEventListener('DOMContentLoaded', loadReviews);
 
     function setRating(rating) {
@@ -256,7 +309,7 @@
 
     function escapeHtml(s) {
         const m = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
-        return String(s).replace(/[&<>"']/g, c => m[c]);
+        return String(s || '').replace(/[&<>"']/g, c => m[c]);
     }
 </script>
 

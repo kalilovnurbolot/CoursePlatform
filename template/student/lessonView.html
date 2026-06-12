@@ -204,6 +204,34 @@
                 } else if (type === 'audio_dictation') {
                     const previous = savedAttempts.find(a => a.block_id === blockId);
                     el.innerHTML = renderAudioDictation(data, blockId, previous);
+                } else if (type === 'html_preview') {
+                    const code = data.content || '';
+                    el.innerHTML = `<div class="rounded-2xl overflow-hidden border border-slate-200 shadow-sm">
+                        <div class="flex items-center gap-2 px-4 py-2 bg-orange-50 border-b border-orange-100 text-xs font-bold uppercase tracking-wider text-orange-500">
+                            <i class="fas fa-eye"></i> ${t('lesson.html_preview_result')}
+                        </div>
+                        <iframe class="w-full bg-white" style="min-height:200px;border:none;" srcdoc="${code.replace(/"/g,'&quot;')}" sandbox="allow-scripts" onload="autoResizeFrame(this)"></iframe>
+                    </div>`;
+                } else if (type === 'attachment') {
+                    const fname = data.filename || '';
+                    const furl  = data.url || '';
+                    const fsize = data.size ? formatBytes(data.size) : '';
+                    const ext   = fname.split('.').pop().toLowerCase();
+                    const iconMap = {pdf:'fa-file-pdf text-red-500', doc:'fa-file-word text-blue-600', docx:'fa-file-word text-blue-600', xls:'fa-file-excel text-green-600', xlsx:'fa-file-excel text-green-600', ppt:'fa-file-powerpoint text-orange-500', pptx:'fa-file-powerpoint text-orange-500', html:'fa-file-code text-orange-400', htm:'fa-file-code text-orange-400', txt:'fa-file-alt text-gray-500', zip:'fa-file-archive text-yellow-600', png:'fa-file-image text-purple-500', jpg:'fa-file-image text-purple-500', jpeg:'fa-file-image text-purple-500', gif:'fa-file-image text-purple-500', svg:'fa-file-image text-purple-500', mp3:'fa-file-audio text-pink-500', mp4:'fa-file-video text-indigo-500'};
+                    const icon = iconMap[ext] || 'fa-file text-teal-500';
+                    el.innerHTML = furl ? `<div class="flex items-center justify-between gap-4 p-4 rounded-2xl border border-teal-200 bg-teal-50">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <i class="fas ${icon} text-2xl shrink-0"></i>
+                            <div class="min-w-0">
+                                <p class="font-semibold text-gray-800 text-sm truncate">${escapeHtml(fname)}</p>
+                                ${fsize ? `<p class="text-xs text-gray-400">${fsize}</p>` : ''}
+                            </div>
+                        </div>
+                        <div class="flex gap-2 shrink-0">
+                            <a href="${furl}" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-teal-300 text-teal-700 text-xs font-semibold rounded-lg hover:bg-teal-100 transition"><i class="fas fa-external-link-alt text-[10px]"></i>${t('lesson.attachment_open')}</a>
+                            <a href="${furl}" download="${escapeHtml(fname)}" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-teal-600 text-white text-xs font-semibold rounded-lg hover:bg-teal-700 transition"><i class="fas fa-download text-[10px]"></i>${t('lesson.attachment_download')}</a>
+                        </div>
+                    </div>` : '';
                 }
             } catch (err) { console.error("Block error:", err); }
         });
@@ -400,6 +428,20 @@
     function escapeHtml(s) {
         const m = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
         return String(s).replace(/[&<>"']/g, c => m[c]);
+    }
+
+    function formatBytes(bytes) {
+        if (!bytes) return '';
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / 1048576).toFixed(1) + ' MB';
+    }
+
+    function autoResizeFrame(frame) {
+        try {
+            const h = frame.contentDocument.body.scrollHeight;
+            if (h > 50) frame.style.height = Math.min(h + 24, 800) + 'px';
+        } catch(e) {}
     }
 
     // --- REACTIONS ---

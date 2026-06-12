@@ -154,6 +154,14 @@
                 <i class="fas fa-headphones text-3xl text-gray-400 group-hover:text-purple-600 mb-2"></i>
                 <span class="text-sm font-medium text-gray-700">{{ T .Lang "admin.course_block_audio" }}</span>
             </button>
+            <button onclick="addBlock('html_preview')" class="flex flex-col items-center justify-center p-4 border rounded-xl hover:border-orange-400 hover:bg-orange-50 hover:shadow-md transition group">
+                <i class="fas fa-eye text-3xl text-gray-400 group-hover:text-orange-500 mb-2"></i>
+                <span class="text-sm font-medium text-gray-700">{{ T .Lang "studio.block_html_preview" }}</span>
+            </button>
+            <button onclick="addBlock('attachment')" class="flex flex-col items-center justify-center p-4 border rounded-xl hover:border-teal-400 hover:bg-teal-50 hover:shadow-md transition group">
+                <i class="fas fa-paperclip text-3xl text-gray-400 group-hover:text-teal-500 mb-2"></i>
+                <span class="text-sm font-medium text-gray-700">{{ T .Lang "studio.block_attachment" }}</span>
+            </button>
         </div>
         <div id="audio-warning" class="hidden text-xs text-red-500 text-center mt-2">
             {{ T .Lang "admin.course_audio_warning" }}
@@ -609,10 +617,18 @@
                         }
                     });
                 }
-                // === НОВАЯ ЛОГИКА ДЛЯ АУДИО-ДИКТАНТА ===
                 else if (type === 'audio_dictation') {
                     const textEl = el.querySelector('.audio-text');
                     blockData.text = textEl ? textEl.value : '';
+                } else if (type === 'html_preview') {
+                    const contentEl = el.querySelector('.block-content');
+                    blockData.content = contentEl ? contentEl.value : '';
+                } else if (type === 'attachment') {
+                    const c = el.querySelector('.attach-container');
+                    blockData.filename = c ? c.dataset.filename || '' : '';
+                    blockData.url      = c ? c.dataset.url || '' : '';
+                    blockData.size     = c ? parseInt(c.dataset.size) || 0 : 0;
+                    blockData.mime     = c ? c.dataset.mime || '' : '';
                 }
 
                 blocks.push({
@@ -883,6 +899,38 @@
                     </div>
                 </div>
             `;
+        } else if (type === 'html_preview') {
+            icon = 'fa-eye'; label = t('studio.block_html_preview');
+            const code = data ? data.content || '' : '';
+            innerHTML = `
+                <div>
+                    <p class="text-xs text-gray-500 mb-1">${t('studio.html_hint')}</p>
+                    <textarea class="block-content w-full border border-orange-200 bg-orange-50 p-3 rounded text-sm font-mono focus:ring-2 focus:ring-orange-400 focus:outline-none transition resize-y" rows="5" placeholder="<h1>Hello</h1>&#10;<style>h1{color:red}</style>" oninput="adminHtmlPreviewUpdate(this)">${adminEscHtml(code)}</textarea>
+                    <div class="mt-2 rounded overflow-hidden border border-orange-100">
+                        <div class="text-[10px] font-bold uppercase tracking-wider text-orange-500 px-3 py-1 bg-orange-50 border-b border-orange-100">${t('lesson.html_preview_result')}</div>
+                        <iframe class="admin-html-frame w-full bg-white" style="height:180px;border:none;" srcdoc="${adminEscHtml(code)}" sandbox="allow-scripts"></iframe>
+                    </div>
+                </div>
+            `;
+        } else if (type === 'attachment') {
+            icon = 'fa-paperclip'; label = t('studio.block_attachment');
+            const fname = data ? data.filename || '' : '';
+            const furl  = data ? data.url || '' : '';
+            const fsize = data && data.size ? adminFormatBytes(data.size) : '';
+            innerHTML = `
+                <div class="attach-container" data-url="${adminEscHtml(furl)}" data-filename="${adminEscHtml(fname)}" data-size="${data ? (data.size||0) : 0}" data-mime="${adminEscHtml(data ? data.mime||'' : '')}">
+                    ${furl ? `<div class="flex items-center gap-2 p-2 bg-teal-50 border border-teal-200 rounded mb-2 text-sm">
+                        <i class="fas fa-file text-teal-500"></i>
+                        <span class="flex-1 truncate font-medium text-teal-800">${adminEscHtml(fname)}</span>
+                        ${fsize ? `<span class="text-xs text-teal-500">${fsize}</span>` : ''}
+                    </div>` : `<div class="text-xs text-gray-400 italic mb-2">${t('studio.attachment_no_file')}</div>`}
+                    <label class="cursor-pointer inline-flex items-center gap-2 px-3 py-2 bg-white border border-teal-300 text-teal-700 text-sm font-medium rounded hover:bg-teal-50 transition">
+                        <i class="fas fa-upload text-xs"></i>
+                        <span class="attach-upload-label">${furl ? t('studio.attachment_change') : t('studio.attachment_upload_btn')}</span>
+                        <input type="file" class="hidden" onchange="adminUploadAttachment(this)" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.html,.htm,.txt,.zip,.png,.jpg,.jpeg,.gif,.svg,.mp3,.mp4">
+                    </label>
+                </div>
+            `;
         }
 
         const div = document.createElement('div');
@@ -970,6 +1018,54 @@
     function adminExtractYoutubeId(url) {
         const m = (url || '').match(/^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/);
         return (m && m[2].length === 11) ? m[2] : null;
+    }
+
+    function adminEscHtml(s) {
+        const m = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+        return String(s || '').replace(/[&<>"']/g, c => m[c]);
+    }
+
+    function adminFormatBytes(bytes) {
+        if (!bytes) return '';
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / 1048576).toFixed(1) + ' MB';
+    }
+
+    function adminHtmlPreviewUpdate(textarea) {
+        const frame = textarea.closest('div').querySelector('.admin-html-frame');
+        if (frame) frame.srcdoc = textarea.value;
+    }
+
+    async function adminUploadAttachment(input) {
+        const file = input.files[0];
+        if (!file) return;
+        const container = input.closest('.attach-container');
+        const label = container ? container.querySelector('.attach-upload-label') : null;
+        if (label) label.textContent = t('studio.attachment_uploading');
+        const fd = new FormData();
+        fd.append('file', file);
+        try {
+            const res = await fetch('/api/studio/upload', { method: 'POST', body: fd });
+            if (!res.ok) throw new Error(await res.text());
+            const json = await res.json();
+            if (container) {
+                container.dataset.url      = json.url;
+                container.dataset.filename = json.filename;
+                container.dataset.size     = json.size;
+                container.dataset.mime     = json.mime;
+                const preview = container.querySelector('div:first-child');
+                if (preview) preview.outerHTML = `<div class="flex items-center gap-2 p-2 bg-teal-50 border border-teal-200 rounded mb-2 text-sm">
+                    <i class="fas fa-file text-teal-500"></i>
+                    <span class="flex-1 truncate font-medium text-teal-800">${adminEscHtml(json.filename)}</span>
+                    <span class="text-xs text-teal-500">${adminFormatBytes(json.size)}</span>
+                </div>`;
+            }
+            if (label) label.textContent = t('studio.attachment_change');
+        } catch (e) {
+            alert('Upload failed: ' + e.message);
+            if (label) label.textContent = t('studio.attachment_upload_btn');
+        }
     }
 
     function adminVideoInput(input) {

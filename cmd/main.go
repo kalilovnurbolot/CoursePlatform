@@ -72,6 +72,7 @@ func main() {
 
 	r := mux.NewRouter()
 	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
+	r.PathPrefix("/uploads/").Handler(http.StripPrefix("/uploads/", http.FileServer(http.Dir("./uploads"))))
 
 	r.HandleFunc("/robots.txt", h.HandleRobotsTxt).Methods("GET")
 	r.HandleFunc("/sitemap.xml", h.HandleSitemapXML).Methods("GET")
@@ -138,6 +139,7 @@ func main() {
 	r.HandleFunc("/api/studio/lessons/{id:[0-9]+}", userMiddleware(h.StudioDeleteLessonAPI)).Methods("DELETE")
 	r.HandleFunc("/api/studio/lessons/{id:[0-9]+}", userMiddleware(h.StudioGetLessonAPI)).Methods("GET")
 	r.HandleFunc("/api/studio/lessons/{id:[0-9]+}/content", userMiddleware(h.StudioUpdateLessonContentAPI)).Methods("PUT")
+	r.HandleFunc("/api/studio/upload", userMiddleware(h.StudioUploadFileAPI)).Methods("POST")
 
 	// Admin — course review requests
 	r.HandleFunc("/admin/course-requests", adminMiddleware(adminService.HandleCourseRequestsPage)).Methods("GET")

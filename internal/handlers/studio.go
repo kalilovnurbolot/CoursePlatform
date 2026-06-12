@@ -3,10 +3,16 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
+	"io"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
 	"reflect"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/s/onlineCourse/internal/i18n"
@@ -609,4 +615,74 @@ func studioAreJSONsEqual(a, b []byte) bool {
 		return bytes.Equal(a, b)
 	}
 	return reflect.DeepEqual(objA, objB)
+}
+
+// POST /api/studio/upload — uploads a file for use in attachment blocks.
+func (h *Handler) StudioUploadFileAPI(w http.ResponseWriter, r *http.Request) {
+	_, ok := h.GetAuthenticatedUserID(r)
+	if !ok {
+		studioJSONError(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	const maxSize = 50 << 20 // 50 MB
+	r.Body = http.MaxBytesReader(w, r.Body, maxSize)
+	if err := r.ParseMultipartForm(maxSize); err != nil {
+		studioJSONError(w, "File too large (max 50 MB)", http.StatusBadRequest)
+		return
+	}
+
+	file, header, err := r.FormFile("file")
+	if err != nil {
+		studioJSONError(w, "Missing file field", http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+
+	allowed := map[string]bool{
+		".pdf": true, ".doc": true, ".docx": true, ".xls": true, ".xlsx": true,
+		".ppt": true, ".pptx": true, ".html": true, ".htm": true, ".txt": true,
+		".zip": true, ".png": true, ".jpg": true, ".jpeg": true, ".gif": true,
+		".svg": true, ".mp3": true, ".mp4": true,
+	}
+	ext := strings.ToLower(filepath.Ext(header.Filename))
+	if !allowed[ext] {
+		studioJSONError(w, "File type not allowed", http.StatusBadRequest)
+		return
+	}
+
+	if err := os.MkdirAll("uploads", 0755); err != nil {
+		studioJSONError(w, "Server error", http.StatusInternalServerError)
+		return
+	}
+
+	safeName := fmt.Sprintf("%d_%s", time.Now().UnixNano(), filepath.Base(header.Filename))
+	safeName = strings.Map(func(r rune) rune {
+		if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') || r == '.' || r == '_' || r == '-' {
+			return r
+		}
+		return '_'
+	}, safeName)
+	dst := filepath.Join("uploads", safeName)
+
+	out, err := os.Create(dst)
+	if err != nil {
+		studioJSONError(w, "Server error", http.StatusInternalServerError)
+		return
+	}
+	defer out.Close()
+
+	size, err := io.Copy(out, file)
+	if err != nil {
+		studioJSONError(w, "Server error", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"filename": header.Filename,
+		"url":      "/uploads/" + safeName,
+		"size":     size,
+		"mime":     header.Header.Get("Content-Type"),
+	})
 }

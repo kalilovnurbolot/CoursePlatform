@@ -70,6 +70,34 @@ func (h *Handler) HandleSitemapXML(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
+	// Individual lesson pages — only open courses or free lessons are crawlable.
+	type lessonRow struct {
+		LessonID  uint
+		CourseID  uint
+		UpdatedAt time.Time
+	}
+	var lessons []lessonRow
+	h.DB.Raw(`
+		SELECT l.id AS lesson_id, m.course_id AS course_id, l.updated_at
+		FROM lessons l
+		JOIN modules m ON m.id = l.module_id
+		JOIN courses c ON c.id = m.course_id
+		WHERE c.is_published = true
+		  AND c.admin_status = 'approved'
+		  AND (c.is_open = true OR l.is_free = true)
+		  AND l.deleted_at IS NULL
+		  AND m.deleted_at IS NULL
+	`).Scan(&lessons)
+
+	for _, l := range lessons {
+		urls = append(urls, sitemapURL{
+			Loc:        fmt.Sprintf("%s/course/%d/lesson/%d", base, l.CourseID, l.LessonID),
+			LastMod:    l.UpdatedAt.UTC().Format("2006-01-02"),
+			ChangeFreq: "monthly",
+			Priority:   "0.8",
+		})
+	}
+
 	var users []models.User
 	h.DB.Select("public_id").
 		Where("public_id != ''").
@@ -172,15 +200,43 @@ func JSONLDCourse(c models.Course, url string) template.JS {
 	return buildJSONLD(data)
 }
 
-// JSONLDLesson returns LearningResource schema for a lesson page.
+// ExtractLessonDescription pulls plain text from the first text ContentBlock.
+func ExtractLessonDescription(blocks []models.ContentBlock, fallback string) string {
+	for _, b := range blocks {
+		if b.Type != "text" {
+			continue
+		}
+		var d struct {
+			Text    string `json:"text"`
+			Content string `json:"content"`
+		}
+		if err := json.Unmarshal(b.Data, &d); err != nil {
+			continue
+		}
+		raw := d.Text
+		if raw == "" {
+			raw = d.Content
+		}
+		if raw != "" {
+			return truncate(raw, 160)
+		}
+	}
+	return fallback
+}
+
+// JSONLDLesson returns LearningResource + BreadcrumbList schema for a lesson page.
 func JSONLDLesson(lesson models.Lesson, course models.Course, lessonURL, courseURL string) template.JS {
 	base := siteBaseURL()
-	return buildJSONLD(map[string]any{
-		"@context":   "https://schema.org",
-		"@type":      "LearningResource",
-		"name":       lesson.Title,
-		"url":        lessonURL,
-		"inLanguage": course.Language,
+	desc := ExtractLessonDescription(lesson.ContentBlocks, lesson.Title+" — "+course.Title)
+
+	resource := map[string]any{
+		"@context":             "https://schema.org",
+		"@type":                "LearningResource",
+		"name":                 lesson.Title,
+		"description":          desc,
+		"url":                  lessonURL,
+		"inLanguage":           course.Language,
+		"learningResourceType": "lesson",
 		"isPartOf": map[string]any{
 			"@type": "Course",
 			"name":  course.Title,
@@ -191,7 +247,28 @@ func JSONLDLesson(lesson models.Lesson, course models.Course, lessonURL, courseU
 			"name":  "CoursePlatform",
 			"url":   base,
 		},
-	})
+	}
+	if course.Author.Name != "" {
+		resource["author"] = map[string]any{
+			"@type": "Person",
+			"name":  course.Author.Name,
+		}
+	}
+	if course.ImageURL != "" {
+		resource["image"] = course.ImageURL
+	}
+
+	breadcrumb := map[string]any{
+		"@context": "https://schema.org",
+		"@type":    "BreadcrumbList",
+		"itemListElement": []any{
+			map[string]any{"@type": "ListItem", "position": 1, "name": "CoursePlatform", "item": base},
+			map[string]any{"@type": "ListItem", "position": 2, "name": course.Title, "item": courseURL},
+			map[string]any{"@type": "ListItem", "position": 3, "name": lesson.Title, "item": lessonURL},
+		},
+	}
+
+	return buildJSONLD([]any{resource, breadcrumb})
 }
 
 // JSONLDPerson returns Person schema for a public user profile page.
