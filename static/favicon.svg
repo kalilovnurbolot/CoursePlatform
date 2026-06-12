@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#818cf8"/>
+      <stop offset="100%" stop-color="#3730a3"/>
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" rx="7" fill="url(#bg)"/>
+  <!-- Left wing -->
+  <path d="M16 25 C16 25 8 22 5 15 C3 10 5 5 10 3 C12.5 2 14.5 2 16 2 Z" fill="white" opacity="0.95"/>
+  <!-- Right wing -->
+  <path d="M16 25 C16 25 24 22 27 15 C29 10 27 5 22 3 C19.5 2 17.5 2 16 2 Z" fill="white" opacity="0.7"/>
+  <!-- Spine -->
+  <line x1="16" y1="2" x2="16" y2="25" stroke="rgba(55,48,163,0.2)" stroke-width="0.8"/>
+  <!-- Bottom arc -->
+  <path d="M9 23.5 Q16 27 23 23.5" fill="none" stroke="white" stroke-width="1" stroke-linecap="round" opacity="0.4"/>
+  <!-- Star -->
+  <polygon points="16,0 17,3 20,3 17.5,4.8 18.5,7.8 16,6 13.5,7.8 14.5,4.8 12,3 15,3" fill="#f59e0b"/>
+</svg>

@@ -1,8 +1,11 @@
-{{define "certificate.html"}}
+﻿{{define "certificate.html"}}
 <!DOCTYPE html>
 <html lang="{{.Lang}}">
 <head>
     <meta charset="UTF-8">
+    <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+    <link rel="icon" href="/static/favicon.svg" sizes="any">
+    <link rel="apple-touch-icon" href="/static/logo-icon.svg">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ T .Lang "cert.verify_title" }} | CoursePlatform</title>
     {{if .Description}}<meta name="description" content="{{.Description}}">{{end}}

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Logo Preview</title>
+<style>
+  body { font-family: system-ui; background: #f8fafc; padding: 40px; }
+  .row { display: flex; align-items: center; gap: 32px; margin-bottom: 40px; flex-wrap: wrap; }
+  .card { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .card.dark { background: #1e1b4b; }
+  .label { font-size: 11px; color: #94a3b8; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; }
+  .label.light { color: #6366f1; }
+  .header-sim { background: white; border-bottom: 1px solid #e2e8f0; padding: 12px 24px; display: flex; align-items: center; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+</style>
+</head>
+<body>
+
+<h2 style="color:#1e1b4b;margin-bottom:32px;font-size:22px;">CoursePlatform Logo Preview</h2>
+
+<div class="row">
+  <div class="card">
+    <span class="label">Icon — 48×48</span>
+    <img src="logo-icon.svg" width="48" height="48">
+  </div>
+  <div class="card">
+    <span class="label">Icon — 64×64</span>
+    <img src="logo-icon.svg" width="64" height="64">
+  </div>
+  <div class="card">
+    <span class="label">Icon — 96×96</span>
+    <img src="logo-icon.svg" width="96" height="96">
+  </div>
+  <div class="card">
+    <span class="label">Icon — 128×128</span>
+    <img src="logo-icon.svg" width="128" height="128">
+  </div>
+  <div class="card dark">
+    <span class="label light">Dark background</span>
+    <img src="logo-icon.svg" width="64" height="64">
+  </div>
+</div>
+
+<div class="row">
+  <div class="card" style="width:100%;">
+    <span class="label">Full logo — normal</span>
+    <img src="logo-full.svg" width="260" height="48">
+  </div>
+  <div class="card dark" style="width:100%;">
+    <span class="label light">Full logo — dark bg</span>
+    <img src="logo-full.svg" width="260" height="48">
+  </div>
+</div>
+
+<div class="row">
+  <div style="width:100%;">
+    <div class="label" style="margin-bottom:12px;">Header simulation</div>
+    <div class="header-sim">
+      <img src="logo-full.svg" height="40" style="height:40px;">
+      <div style="flex:1"></div>
+      <span style="font-size:13px;color:#64748b;margin-right:24px;">Главная</span>
+      <span style="font-size:13px;color:#64748b;margin-right:24px;">Курсы</span>
+      <span style="font-size:13px;color:#64748b;">О нас</span>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 48" width="260" height="48">
+  <defs>
+    <linearGradient id="fl-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#818cf8"/>
+      <stop offset="100%" stop-color="#3730a3"/>
+    </linearGradient>
+    <linearGradient id="fl-lw" x1="1" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.55"/>
+    </linearGradient>
+    <linearGradient id="fl-rw" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.35"/>
+    </linearGradient>
+    <filter id="fl-glow" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="0.8" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Icon background — 48×48 rounded square -->
+  <rect x="0" y="0" width="48" height="48" rx="11" fill="url(#fl-bg)"/>
+
+  <!-- Left wing -->
+  <path d="M24 37.5
+           C24 37.5 15.5 34.5 10 27.5
+           C6 21.5 7 14 11.5 10
+           C15 6.5 19.5 5.5 24 5.5
+           Z"
+        fill="url(#fl-lw)"/>
+
+  <!-- Right wing -->
+  <path d="M24 37.5
+           C24 37.5 32.5 34.5 38 27.5
+           C42 21.5 41 14 36.5 10
+           C33 6.5 28.5 5.5 24 5.5
+           Z"
+        fill="url(#fl-rw)"/>
+
+  <!-- Spine -->
+  <line x1="24" y1="5.5" x2="24" y2="37.5" stroke="rgba(55,48,163,0.18)" stroke-width="0.7"/>
+
+  <!-- Bottom arc -->
+  <path d="M13 36 Q24 40.5 35 36" fill="none" stroke="white" stroke-width="0.9" stroke-linecap="round" opacity="0.32"/>
+
+  <!-- Text lines left -->
+  <line x1="11.5" y1="16.5" x2="22" y2="15"   stroke="#312e81" stroke-width="0.9" stroke-linecap="round" opacity="0.28"/>
+  <line x1="10.5" y1="21.5" x2="22" y2="20.5" stroke="#312e81" stroke-width="0.9" stroke-linecap="round" opacity="0.28"/>
+  <line x1="10.5" y1="26.5" x2="22" y2="26"   stroke="#312e81" stroke-width="0.9" stroke-linecap="round" opacity="0.22"/>
+  <line x1="11.5" y1="31"   x2="22" y2="31"   stroke="#312e81" stroke-width="0.9" stroke-linecap="round" opacity="0.16"/>
+
+  <!-- Text lines right -->
+  <line x1="26" y1="15"   x2="36.5" y2="16.5" stroke="#312e81" stroke-width="0.9" stroke-linecap="round" opacity="0.2"/>
+  <line x1="26" y1="20.5" x2="37.5" y2="21.5" stroke="#312e81" stroke-width="0.9" stroke-linecap="round" opacity="0.2"/>
+  <line x1="26" y1="26"   x2="37.5" y2="26.5" stroke="#312e81" stroke-width="0.9" stroke-linecap="round" opacity="0.16"/>
+  <line x1="26" y1="31"   x2="36.5" y2="31"   stroke="#312e81" stroke-width="0.9" stroke-linecap="round" opacity="0.12"/>
+
+  <!-- Star -->
+  <g filter="url(#fl-glow)">
+    <polygon
+      points="24,0.5 25.3,4.7 29.5,4.7 26.2,7.1 27.5,11.3 24,8.9 20.5,11.3 21.8,7.1 18.5,4.7 22.7,4.7"
+      fill="#f59e0b"/>
+  </g>
+  <!-- Sparkle dots -->
+  <circle cx="17.5" cy="3.5" r="0.9" fill="#fbbf24" opacity="0.6"/>
+  <circle cx="30.5" cy="3.5" r="0.9" fill="#fbbf24" opacity="0.6"/>
+
+  <!-- Wordmark: "Course" bold dark + "Platform" indigo -->
+  <text x="58" y="20" font-family="Inter, system-ui, sans-serif" font-size="17" font-weight="700" fill="#0f172a" letter-spacing="-0.3">Course</text>
+  <text x="58" y="38" font-family="Inter, system-ui, sans-serif" font-size="14" font-weight="500" fill="#4f46e5" letter-spacing="0.8">PLATFORM</text>
+</svg>
